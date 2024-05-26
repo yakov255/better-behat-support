@@ -7,7 +7,7 @@ import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceProvider
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
 
-class MyPsiReferenceContributor : PsiReferenceContributor() {
+class GherkinStepReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         registrar.registerReferenceProvider(
             PlatformPatterns.psiElement(PsiElement::class.java),
@@ -15,11 +15,10 @@ class MyPsiReferenceContributor : PsiReferenceContributor() {
                 override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
                     return if (element is GherkinStep) {
                         val text = element.text
-                        val regex = Regex("в таблице (\\w+) есть данные: -timestamps")
-                        val match = regex.find(text)
-                        if (match != null) {
-                            val tableName = match.groupValues[1]
-                            arrayOf(MyPsiReference(element, tableName))
+                        val matcher = Enum().pattern.matcher(text)
+                        if (matcher.find()) {
+                            val fileName = matcher.group(1)
+                            arrayOf(FilePsiReference(element, fileName))
                         } else {
                             PsiReference.EMPTY_ARRAY
                         }

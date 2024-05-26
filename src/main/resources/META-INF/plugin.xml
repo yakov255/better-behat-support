@@ -7,14 +7,9 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>gherkin</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.yakov255.betterbehatsupport.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.MyPsiReferenceContributor"/>
+        <localInspection displayName="Test" groupName="Test" language="Gherkin" implementationClass="com.github.yakov255.betterbehatsupport.GherkinStepInspection"/>
+        <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
+        <renamePsiElementProcessor implementation="com.github.yakov255.betterbehatsupport.GherkinStepRenameProcessor"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.yakov255.betterbehatsupport.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>

@@ -5,6 +5,7 @@
     <vendor>yakov255</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>gherkin</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 

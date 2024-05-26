@@ -12,6 +12,10 @@
         <toolWindow factoryClass="com.github.yakov255.betterbehatsupport.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
     </extensions>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <annotator language="Gherkin" implementationClass="com.github.yakov255.betterbehatsupport.CustomAnnotator"/>
+    </extensions>
+
     <applicationListeners>
         <listener class="com.github.yakov255.betterbehatsupport.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
     </applicationListeners>

@@ -11,10 +11,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.yakov255.betterbehatsupport.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <annotator language="Gherkin" implementationClass="com.github.yakov255.betterbehatsupport.CustomAnnotator"/>
+        <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.MyPsiReferenceContributor"/>
     </extensions>
 
     <applicationListeners>

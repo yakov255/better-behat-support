@@ -6,6 +6,7 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceProvider
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
+import java.util.regex.Pattern
 
 class GherkinStepReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
@@ -15,7 +16,7 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                 override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
                     return if (element is GherkinStep) {
                         val text = element.text
-                        val matcher = Enum().pattern.matcher(text)
+                        val matcher = Pattern.compile(Enum.pattern).matcher(text)
                         if (matcher.find()) {
                             val fileName = matcher.group(1)
                             arrayOf(FilePsiReference(element, fileName))

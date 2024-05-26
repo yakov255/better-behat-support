@@ -8,7 +8,14 @@
     <depends>gherkin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <localInspection displayName="Test" groupName="Test" language="Gherkin" implementationClass="com.github.yakov255.betterbehatsupport.GherkinStepInspection"/>
+        <localInspection language="Gherkin"
+                         shortName="InvalidGherkinStepInspection"
+                         displayName="File not found"
+                         groupPath="Gherkin"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         implementationClass="com.github.yakov255.betterbehatsupport.GherkinStepFilenameInspection"
+                         groupName="Gherkin"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
         <renamePsiElementProcessor implementation="com.github.yakov255.betterbehatsupport.GherkinStepRenameProcessor"/>
     </extensions>

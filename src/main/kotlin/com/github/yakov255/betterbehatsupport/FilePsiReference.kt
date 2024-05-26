@@ -19,7 +19,7 @@ class FilePsiReference(element: PsiElement, private val fileName: String) : PsiR
         currentDir ?: return null // Return null if there is no parent directory
 
         // Find the "files" directory alongside the current file's directory
-        val filesDir: VirtualFile? = currentDir.findChild("expected_responses")
+        val filesDir: VirtualFile? = currentDir.findChild(Enum.directory)
         filesDir ?: return null // Return null if the "files" directory does not exist
 
         // Find the target file in the "files" directory

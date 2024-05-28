@@ -27,5 +27,12 @@ Features:
 #### Find usages
 ![Find usages on file](screens/find_usages.png)
 
+#### File not found inspections
+
+![File not found inspections](screens/file_not_found_inspection.png)
+
+#### Create file refactoring
+
+![Create file refactoring](screens/crate_file_refactoring.png)
 
 <!-- Plugin description end -->

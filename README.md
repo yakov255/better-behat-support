@@ -1,4 +1,4 @@
-# better-behat-support
+# Behat external file handling enhancements
 
 ![Build](https://github.com/yakov255/better-behat-support/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
@@ -11,12 +11,21 @@ Features:
 - [x] Support folder "expected_responses"
 - [x] Change filename in gherkin step when file renamed
 - [x] Check that file exists or show quick fix "create file $filename"
+- [x] Go to file context action
+- [x] Find usages on file
 
 ### TODO:
-- [ ] Add Find Usages for file
-- [ ] Add Go to Declaration for step
 - [ ] Add support for safe delete
 - [ ] Add support for any folder
 - [ ] Add setting with custom steps regexes
+
+### Screens
+
+#### Go to file
+![Go to file context action](screens/go_to_file.png)
+
+#### Find usages
+![Find usages on file](screens/find_usages.png)
+
 
 <!-- Plugin description end -->

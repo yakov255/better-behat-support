@@ -1,5 +1,6 @@
 package com.github.yakov255.betterbehatsupport
 
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.util.ProcessingContext
 import com.intellij.patterns.PlatformPatterns
@@ -19,7 +20,12 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
 
                     return if (matcher.find()) {
                         val fileName = matcher.group(1)
-                        arrayOf(FilePsiReference(element, fileName))
+
+                        val start = matcher.start(1)
+                        val end = matcher.end(1)
+                        val textRange = TextRange(start, end)
+
+                        arrayOf(GherkinStepFileReference(element, textRange))
                     } else {
                         PsiReference.EMPTY_ARRAY
                     }

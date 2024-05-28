@@ -18,5 +18,9 @@
                          groupName="Gherkin"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
         <renamePsiElementProcessor implementation="com.github.yakov255.betterbehatsupport.GherkinStepRenameProcessor"/>
+        <intentionAction>
+            <language>Gherkin</language>
+            <className>com.github.yakov255.betterbehatsupport.GoToFileIntention</className>
+        </intentionAction>
     </extensions>
 </idea-plugin>

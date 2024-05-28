@@ -2,7 +2,10 @@ package com.github.yakov255.betterbehatsupport
 
 import com.intellij.json.psi.JsonFile
 import com.intellij.openapi.editor.Editor
-import com.intellij.psi.*
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.refactoring.listeners.RefactoringElementListener
 import com.intellij.refactoring.rename.RenamePsiElementProcessor
 import com.intellij.usageView.UsageInfo
@@ -14,10 +17,7 @@ class GherkinStepRenameProcessor : RenamePsiElementProcessor() {
     }
 
     override fun substituteElementToRename(element: PsiElement, editor: Editor?): PsiElement? {
-        if (element is PsiFile) {
-            return element
-        }
-        return null
+        return if (element is PsiFile) element else null
     }
 
     override fun renameElement(

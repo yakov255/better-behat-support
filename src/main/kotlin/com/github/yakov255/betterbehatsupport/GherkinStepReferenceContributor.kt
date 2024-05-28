@@ -11,18 +11,15 @@ import java.util.regex.Pattern
 class GherkinStepReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         registrar.registerReferenceProvider(
-            PlatformPatterns.psiElement(PsiElement::class.java),
+            PlatformPatterns.psiElement(GherkinStep::class.java),
             object : PsiReferenceProvider() {
                 override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
-                    return if (element is GherkinStep) {
-                        val text = element.text
-                        val matcher = Pattern.compile(Enum.pattern).matcher(text)
-                        if (matcher.find()) {
-                            val fileName = matcher.group(1)
-                            arrayOf(FilePsiReference(element, fileName))
-                        } else {
-                            PsiReference.EMPTY_ARRAY
-                        }
+                    val text = (element as GherkinStep).text
+                    val matcher = Pattern.compile(Enum.pattern).matcher(text)
+
+                    return if (matcher.find()) {
+                        val fileName = matcher.group(1)
+                        arrayOf(FilePsiReference(element, fileName))
                     } else {
                         PsiReference.EMPTY_ARRAY
                     }

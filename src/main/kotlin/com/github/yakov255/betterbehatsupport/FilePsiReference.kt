@@ -1,5 +1,6 @@
 package com.github.yakov255.betterbehatsupport
 
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiReferenceBase
@@ -8,10 +9,14 @@ class FilePsiReference(element: PsiElement, private val fileName: String) : PsiR
 
     override fun resolve(): PsiElement? {
         val project = myElement.project
-        val virtualFile = myElement.containingFile.virtualFile
+        val featureFile = myElement.containingFile.virtualFile
+        val filesDir: VirtualFile? = featureFile.parent?.findChild(Enum.directory)
 
-        return virtualFile.parent?.findChild(Enum.directory)?.findChild(fileName)?.let { targetFile ->
-            PsiManager.getInstance(project).findFile(targetFile)
-        }
+        val targetFile = filesDir?.findChild(fileName)
+        return targetFile?.let { PsiManager.getInstance(project).findFile(it) }
+    }
+
+    override fun getVariants(): Array<Any> {
+        return emptyArray()
     }
 }

@@ -6,6 +6,7 @@ import com.intellij.util.ProcessingContext
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiReferenceProvider
+import org.jetbrains.plugins.cucumber.psi.GherkinScenario
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
 import java.util.regex.Pattern
 
@@ -19,13 +20,13 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                     val matcher = Pattern.compile(Enum.pattern).matcher(text)
 
                     return if (matcher.find()) {
-                        val fileName = matcher.group(1)
-
                         val start = matcher.start(1)
                         val end = matcher.end(1)
                         val textRange = TextRange(start, end)
 
-                        arrayOf(GherkinStepFileReference(element, textRange))
+                        val scenario = element.parent as GherkinScenario
+
+                        arrayOf(GherkinStepFileReference(element, textRange, scenario))
                     } else {
                         PsiReference.EMPTY_ARRAY
                     }

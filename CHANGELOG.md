@@ -1,7 +1,12 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# better-behat-support Changelog
+# Behat external file handling enhancements Changelog
 
-## [Unreleased]
+## [1.0.0]
 ### Added
-- Initial scaffold created from [IntelliJ Platform Plugin Template](https://github.com/JetBrains/intellij-platform-plugin-template)
+- Support line "ответ содержит данные значения, аналогичные файлу (.+)"
+- Support folder "expected_responses"
+- Change filename in gherkin step when file renamed
+- Check that file exists or show quick fix "create file $filename"
+- Go to file context action
+- Find usages on file

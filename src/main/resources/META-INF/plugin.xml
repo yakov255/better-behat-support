@@ -8,14 +8,6 @@
     <depends>gherkin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <localInspection language="Gherkin"
-                         shortName="InvalidGherkinStepInspection"
-                         displayName="File not found"
-                         groupPath="Gherkin"
-                         enabledByDefault="true"
-                         level="ERROR"
-                         implementationClass="com.github.yakov255.betterbehatsupport.GherkinStepFilenameInspection"
-                         groupName="Gherkin"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
         <intentionAction>
             <language>Gherkin</language>

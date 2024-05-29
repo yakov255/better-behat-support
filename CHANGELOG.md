@@ -4,7 +4,6 @@
 
 ## [Unreleased]
 
-## [1.0.0]
 ### Added
 - Support line "ответ содержит данные значения, аналогичные файлу (.+)"
 - Support folder "expected_responses"
@@ -12,3 +11,5 @@
 - Check that file exists or show quick fix "create file $filename"
 - Go to file context action
 - Find usages on file
+
+## [1.0.0]

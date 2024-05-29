@@ -2,6 +2,8 @@ package com.github.yakov255.betterbehatsupport
 
 import com.intellij.codeInspection.*
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiElementVisitor
 import org.jetbrains.plugins.cucumber.psi.GherkinElementVisitor
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
@@ -32,7 +34,21 @@ class GherkinStepFilenameInspection : LocalInspectionTool() {
                             override fun getName() = "Create file $fileName"
 
                             override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
-                                referencedFile.createNewFile()
+                                try {
+                                    if (!filesDir.exists()) {
+                                        return
+                                    }
+
+                                    // Create the file using VirtualFile API
+                                    val virtualFilesDir = LocalFileSystem.getInstance().findFileByIoFile(filesDir)
+                                    if (virtualFilesDir != null) {
+                                        val virtualFile = virtualFilesDir.createChildData(this, fileName)
+                                        VfsUtil.saveText(virtualFile, "")
+                                        virtualFile.refresh(false, false)
+                                    }
+                                } catch (e: Exception) {
+                                    throw RuntimeException("Failed to create file $fileName", e)
+                                }
                             }
 
                             override fun getFamilyName() = name

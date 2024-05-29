@@ -2,6 +2,8 @@
 
 # Behat external file handling enhancements Changelog
 
+## [Unreleased]
+
 ## [1.0.0]
 ### Added
 - Support line "ответ содержит данные значения, аналогичные файлу (.+)"

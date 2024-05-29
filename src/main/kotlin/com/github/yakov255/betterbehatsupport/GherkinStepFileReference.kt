@@ -17,7 +17,7 @@ class GherkinStepFileReference(
 
     override fun resolve(): PsiElement? {
         val fileName = myElement.text.substring(rangeInElement.startOffset, rangeInElement.endOffset)
-        val featureFile = myElement.containingFile.virtualFile
+        val featureFile = myElement.containingFile.virtualFile ?: return null // There is no virtualFile when autocompletion
         val filesDir = featureFile.parent.findChild(Enum.directory) ?: return null
         val targetFile = filesDir.findChild(fileName) ?: return null
 

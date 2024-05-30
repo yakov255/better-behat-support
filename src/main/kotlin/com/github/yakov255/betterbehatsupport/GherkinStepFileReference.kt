@@ -12,7 +12,6 @@ import org.jetbrains.plugins.cucumber.psi.GherkinStep
 class GherkinStepFileReference(
     step: GherkinStep,
     range: TextRange,
-    private val scenario: GherkinScenario
 ) : PsiReferenceBase<GherkinStep>(step, range), PsiPolyVariantReference {
 
     override fun resolve(): PsiElement? {
@@ -39,6 +38,9 @@ class GherkinStepFileReference(
     override fun handleElementRename(newFileName: String): PsiElement {
         val oldFileName = myElement.text.substring(rangeInElement.startOffset, rangeInElement.endOffset)
         val newStepText = myElement.text.replace(oldFileName, newFileName)
+
+        val scenario = myElement.parent as GherkinScenario
+
         val newScenarioText = scenario.text.replace(myElement.text, newStepText)
         val stepIndex = scenario.steps.indexOf(myElement)
 

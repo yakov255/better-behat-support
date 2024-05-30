@@ -24,9 +24,7 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                         val end = matcher.end(1)
                         val textRange = TextRange(start, end)
 
-                        val scenario = element.parent as GherkinScenario
-
-                        arrayOf(GherkinStepFileReference(element, textRange, scenario))
+                        arrayOf(GherkinStepFileReference(element, textRange))
                     } else {
                         PsiReference.EMPTY_ARRAY
                     }

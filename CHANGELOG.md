@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+- Support all files in directory alongside .feature file
+- Support all files in all directories alongside .feature file
+- Support relative paths (responses/response.json)
+- Support multiple files in one step
+- Supports txt, json and xml files
+- Removed Inspection
+- Removed Go To File action
+
+
+## [1.0.0]
+
 ### Added
 - Support line "ответ содержит данные значения, аналогичные файлу (.+)"
 - Support folder "expected_responses"
@@ -11,5 +22,3 @@
 - Check that file exists or show quick fix "create file $filename"
 - Go to file context action
 - Find usages on file
-
-## [1.0.0]

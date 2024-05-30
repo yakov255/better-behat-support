@@ -33,8 +33,7 @@ class GherkinStepFileReference(
 
     @Throws(IncorrectOperationException::class)
     override fun handleElementRename(newFileName: String): PsiElement {
-        val oldFileName = myElement.text.substring(rangeInElement.startOffset, rangeInElement.endOffset)
-        val newStepText = myElement.text.replace(oldFileName, newFileName)
+        val newStepText = myElement.text.substring(0, rangeInElement.startOffset) + newFileName + myElement.text.substring(rangeInElement.endOffset, myElement.text.length)
 
         val scenario = myElement.parent as GherkinScenario
 

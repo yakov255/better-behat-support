@@ -24,14 +24,17 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                     // There is no virtualFile when autocompletion
                     val featureFile = step.containingFile.virtualFile ?: return references.toTypedArray()
 
+                    if(featureFile.parent === null){
+                        return references.toTypedArray()
+                    }
+                    val virtualDirectory: VirtualFile = featureFile.parent
+
                     while (matcher.find()) {
                         val start = matcher.start(1)
                         val end = matcher.end(1)
                         val textRange = TextRange(start, end)
 
                         val fileName = text.substring(textRange.startOffset, textRange.endOffset)
-
-                        val virtualDirectory: VirtualFile = featureFile.parent
 
                         val files = findFiles(virtualDirectory, fileName)
 

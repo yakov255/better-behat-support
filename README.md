@@ -1,38 +1,27 @@
+<!-- Plugin description -->
+
 # Behat external file handling enhancements
 
 ![Build](https://github.com/yakov255/better-behat-support/workflows/Build/badge.svg)
 [![Version](https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg)](https://plugins.jetbrains.com/plugin/PLUGIN_ID)
 
-<!-- Plugin description -->
-
-Features:  
-- [x] Support line "ответ содержит данные значения, аналогичные файлу (.+)"
-- [x] Support folder "expected_responses"
+Features:
 - [x] Change filename in gherkin step when file renamed
-- [x] Check that file exists or show quick fix "create file $filename"
 - [x] Go to file context action
 - [x] Find usages on file
 
 ### TODO:
-- [ ] Add support for safe delete
-- [ ] Add support for any folder
+- [ ] Add file not found inspection
+- [ ] Add create file quick step
 - [ ] Add setting with custom steps regexes
 
 ### Screens
 
 #### Go to file
-![Go to file context action](screens/go_to_file.png)
+![Go to file context action](https://github.com/yakov255/better-behat-support/blob/main/screens/go_to_file.png?raw=true)
 
 #### Find usages
-![Find usages on file](screens/find_usages.png)
-
-#### File not found inspections
-
-![File not found inspections](screens/file_not_found_inspection.png)
-
-#### Create file refactoring
-
-![Create file refactoring](screens/crate_file_refactoring.png)
+![Find usages on file](https://github.com/yakov255/better-behat-support/blob/main/screens/find_usages.png?raw=true)
 
 <!-- Plugin description end -->

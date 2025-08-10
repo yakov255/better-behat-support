@@ -2,7 +2,7 @@
 
 # Behat external file handling enhancements Changelog
 
-## [1.3.0]
+## Unreleased
 - Added support for 2025.2 and up
 - Removed Rename File quick action
 

@@ -2,7 +2,11 @@
 
 # Behat external file handling enhancements Changelog
 
-## [Unreleased]
+## [1.3.0]
+- Added support for 2025.2 and up
+
+
+## [1.2.0]
 
 - Support all files in directory alongside .feature file
 - Support all files in all directories alongside .feature file

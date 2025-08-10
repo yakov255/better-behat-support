@@ -7,7 +7,6 @@
 Features:
 - * ctrl-click for opening file under cursor
 - * Find usages on file under directory alongside .feature file
-- * Rename file context action
 
 ### Screens
 

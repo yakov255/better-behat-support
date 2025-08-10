@@ -4,6 +4,7 @@
 
 ## [1.3.0]
 - Added support for 2025.2 and up
+- Removed Rename File quick action
 
 
 ## [1.2.0]

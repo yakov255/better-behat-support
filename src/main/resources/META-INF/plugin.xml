@@ -9,9 +9,5 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
-        <intentionAction>
-            <language>Gherkin</language>
-            <className>com.github.yakov255.betterbehatsupport.RenameFileIntention</className>
-        </intentionAction>
     </extensions>
 </idea-plugin>

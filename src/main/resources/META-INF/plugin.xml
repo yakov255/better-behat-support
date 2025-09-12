@@ -6,8 +6,18 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>gherkin</depends>
+    <depends>com.intellij.modules.phpstorm</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
     </extensions>
+
+    <actions>
+        <action id="PhpBetterBehatSupport.PhpMethodCallMap"
+                class="com.github.yakov255.betterbehatsupport.PhpMethodCallMapAction"
+                text="Show PHP Method Call Map"
+                description="Shows a map of method calls for the current PHP method">
+            <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="GenerateJavadoc"/>
+        </action>
+    </actions>
 </idea-plugin>

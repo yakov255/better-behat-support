@@ -8,8 +8,8 @@ class PhpMethodCallMapAction : AnAction("Show PHP Method Call Map") {
     override fun actionPerformed(e: AnActionEvent) {
         val project: Project? = e.project
         if (project != null) {
-            val methodCalls = PhpMethodCallFinder.findMethodCalls(project, e)
-            PhpMethodCallMapDialog(project, methodCalls).show()
+            val callTree = PhpMethodCallFinder.buildMethodCallTree(project, e)
+            PhpMethodCallMapDialog(project, callTree).show()
         }
     }
 }

@@ -12,24 +12,28 @@ import com.jetbrains.php.lang.psi.elements.MethodReference
 object PhpMethodCallFinder {
 
     fun findMethodCalls(project: Project, event: AnActionEvent): List<PsiElement> {
+
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return emptyList()
         val psiFile = event.getData(CommonDataKeys.PSI_FILE) ?: return emptyList()
 
         val offset = editor.caretModel.offset
-        val element = psiFile.findElementAt(offset)
+        val element = psiFile.findElementAt(offset) ?: return emptyList()
 
-        val method = PsiTreeUtil.getParentOfType(element, Method::class.java)
-        if (method != null) {
-            val methodCalls = mutableListOf<PsiElement>()
-            ReferencesSearch.search(method).forEach { psiReference ->
+        val method = PsiTreeUtil.getParentOfType(element, Method::class.java) ?: return emptyList()
+        
+        val methodCalls = mutableListOf<PsiElement>()
+        try {
+            ReferencesSearch.search(method, method.useScope).forEach { psiReference ->
                 val referenceElement = psiReference.element
                 if (referenceElement is MethodReference) {
                     methodCalls.add(referenceElement)
                 }
             }
-            return methodCalls
+        } catch (e: Exception) {
+            // Handle any search exceptions gracefully
+            return emptyList()
         }
-
-        return emptyList()
+        
+        return methodCalls
     }
 }

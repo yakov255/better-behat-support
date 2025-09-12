@@ -11,9 +11,14 @@ data class MethodCallTreeNode(
     val fileName: String,
     val lineNumber: Int,
     val methodSignature: String,
+    val codeContext: String = "",
     val callers: MutableList<MethodCallTreeNode> = mutableListOf(),
     val callees: MutableList<MethodCallTreeNode> = mutableListOf(),
-    var isExpanded: Boolean = true
+    var isExpanded: Boolean = true,
+    var x: Int = 0,
+    var y: Int = 0,
+    var width: Int = 200,
+    var height: Int = 100
 ) {
     
     /**
@@ -44,6 +49,30 @@ data class MethodCallTreeNode(
      */
     fun getDisplayText(): String {
         return "$methodSignature ($fileName:$lineNumber)"
+    }
+    
+    /**
+     * Get simplified display text without file info
+     */
+    fun getSimpleDisplayText(): String {
+        return methodSignature
+    }
+    
+    /**
+     * Get code context with line numbers
+     */
+    fun getFormattedCodeContext(): String {
+        return if (codeContext.isNotEmpty()) {
+            val lines = codeContext.split("\n")
+            val startLine = maxOf(1, lineNumber - 3)
+            lines.mapIndexed { index, line ->
+                val currentLine = startLine + index
+                val marker = if (currentLine == lineNumber) "→" else " "
+                "$marker $currentLine: $line"
+            }.joinToString("\n")
+        } else {
+            "// Code not available"
+        }
     }
     
     /**

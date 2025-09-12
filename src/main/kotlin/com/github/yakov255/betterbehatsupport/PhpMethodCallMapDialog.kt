@@ -69,9 +69,10 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
     
     /**
      * Create tree node recursively with circular reference detection
+     * Shows only callers in a stack trace format
      */
     private fun createTreeNode(callTreeNode: MethodCallTreeNode, visited: MutableSet<String>): DefaultMutableTreeNode {
-        val displayText = callTreeNode.getDisplayText()
+        val displayText = callTreeNode.getSimpleDisplayText()
         val treeNode = DefaultMutableTreeNode(CallTreeNodeData(callTreeNode, displayText))
         
         // Prevent infinite recursion
@@ -82,22 +83,9 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
         
         visited.add(callTreeNode.methodId)
         
-        // Add callers section
-        if (callTreeNode.callers.isNotEmpty()) {
-            val callersNode = DefaultMutableTreeNode("↑ Called by (${callTreeNode.callers.size})")
-            callTreeNode.callers.forEach { caller ->
-                callersNode.add(createTreeNode(caller, visited.toMutableSet()))
-            }
-            treeNode.add(callersNode)
-        }
-        
-        // Add callees section
-        if (callTreeNode.callees.isNotEmpty()) {
-            val calleesNode = DefaultMutableTreeNode("↓ Calls (${callTreeNode.callees.size})")
-            callTreeNode.callees.forEach { callee ->
-                calleesNode.add(createTreeNode(callee, visited.toMutableSet()))
-            }
-            treeNode.add(calleesNode)
+        // Add callers directly without grouping label (stack trace style)
+        callTreeNode.callers.forEach { caller ->
+            treeNode.add(createTreeNode(caller, visited.toMutableSet()))
         }
         
         visited.remove(callTreeNode.methodId)
@@ -109,14 +97,14 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
      */
     private fun createInfoPanel(): JPanel {
         val infoPanel = JPanel(BorderLayout())
-        infoPanel.border = BorderFactory.createTitledBorder("Instructions")
+        infoPanel.border = BorderFactory.createTitledBorder("Call Stack")
         
         val infoText = """
             <html>
-            <b>Tree Structure:</b><br>
-            • Root node shows the selected method<br>
-            • ↑ "Called by" shows methods that call this method<br>
-            • ↓ "Calls" shows methods that this method calls<br>
+            <b>Call Stack Trace:</b><br>
+            • Shows who calls the selected method (stack trace format)<br>
+            • Root node is the selected method<br>
+            • Child nodes show callers in hierarchical order<br>
             <br>
             <b>Navigation:</b><br>
             • Double-click on any method to navigate to its definition<br>

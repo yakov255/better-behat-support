@@ -69,7 +69,7 @@ object PhpMethodCallFinder {
         visitedNodes.add(methodNode.methodId)
         
         try {
-            // Find who calls this method (callers)
+            // Find who calls this method (callers only for simplified view)
             ReferencesSearch.search(method).forEach { psiReference ->
                 val referenceElement = psiReference.element
                 val callerMethod = findContainingMethod(referenceElement)
@@ -77,16 +77,6 @@ object PhpMethodCallFinder {
                     val callerNode = buildTreeRecursively(callerMethod, visitedNodes.toMutableSet(), depth + 1)
                     if (callerNode != null) {
                         methodNode.addCaller(callerNode)
-                    }
-                }
-            }
-            
-            // Find what this method calls (callees)
-            findMethodCallsInElement(method).forEach { calledMethod ->
-                if (calledMethod != method) {
-                    val calleeNode = buildTreeRecursively(calledMethod, visitedNodes.toMutableSet(), depth + 1)
-                    if (calleeNode != null) {
-                        methodNode.addCallee(calleeNode)
                     }
                 }
             }

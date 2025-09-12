@@ -100,13 +100,40 @@ object PhpMethodCallFinder {
         } ?: 0
         
         val methodSignature = buildMethodSignature(method)
+        val codeContext = extractCodeContext(method, lineNumber)
         
         return MethodCallTreeNode(
             method = method,
             fileName = fileName,
             lineNumber = lineNumber,
-            methodSignature = methodSignature
+            methodSignature = methodSignature,
+            codeContext = codeContext
         )
+    }
+    
+    /**
+     * Extract code context (±3 lines) around the method
+     */
+    private fun extractCodeContext(method: PsiNamedElement, lineNumber: Int): String {
+        return try {
+            val containingFile = method.containingFile ?: return ""
+            val document = containingFile.viewProvider?.document ?: return ""
+            
+            val startLine = maxOf(0, lineNumber - 4) // -3 lines plus current
+            val endLine = minOf(document.lineCount - 1, lineNumber + 2) // +3 lines
+            
+            val lines = mutableListOf<String>()
+            for (i in startLine..endLine) {
+                val lineStartOffset = document.getLineStartOffset(i)
+                val lineEndOffset = document.getLineEndOffset(i)
+                val lineText = document.getText().substring(lineStartOffset, lineEndOffset)
+                lines.add(lineText)
+            }
+            
+            lines.joinToString("\n")
+        } catch (e: Exception) {
+            "// Code context not available"
+        }
     }
     
     /**

@@ -1,6 +1,5 @@
 package com.github.yakov255.betterbehatsupport
 
-import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.pom.Navigatable
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
@@ -9,8 +8,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.geom.QuadCurve2D
 import javax.swing.JPanel
-import javax.swing.JTextArea
-import javax.swing.border.LineBorder
 import kotlin.math.*
 
 class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel() {
@@ -22,15 +19,11 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     init {
         background = JBColor.WHITE
         preferredSize = JBUI.size(800, 600)
-        
-        if (rootNode != null) {
-            layoutNodes()
-            setupMouseListener()
-        }
+        setupMouseListener()
     }
     
     /**
-     * Layout nodes in a mindmap style
+     * Layout nodes in a mindmap style with collision avoidance
      */
     private fun layoutNodes() {
         if (rootNode == null) return
@@ -51,24 +44,35 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         )
         methodBlocks.add(rootBlock)
         
-        // Layout callers around the root
-        layoutCallers(rootNode, rootBlock, centerX, centerY)
+        // Layout callers around the root with improved algorithm
+        layoutCallersImproved(rootNode, rootBlock, centerX, centerY)
+        
+        // Apply force-based layout to resolve overlaps
+        applyForceBasedLayout()
     }
     
     /**
-     * Layout caller nodes around the root
+     * Improved layout for caller nodes with better spacing
      */
-    private fun layoutCallers(node: MethodCallTreeNode, parentBlock: MethodBlock, centerX: Int, centerY: Int) {
+    private fun layoutCallersImproved(node: MethodCallTreeNode, parentBlock: MethodBlock, centerX: Int, centerY: Int) {
         val callers = node.callers
         if (callers.isEmpty()) return
         
-        val radius = 250
-        val angleStep = 2 * PI / maxOf(callers.size, 1)
+        // Calculate minimum radius based on block sizes and count
+        val minRadius = calculateMinimumRadius(callers.size, 200, 100)
+        val radius = maxOf(minRadius, 280) // Ensure minimum distance
+        
+        // Use golden angle for better distribution
+        val goldenAngle = PI * (3.0 - sqrt(5.0)) // ~137.5 degrees
         
         callers.forEachIndexed { index, caller ->
-            val angle = index * angleStep - PI / 2 // Start from top
-            val x = centerX + (radius * cos(angle)).toInt() - 100
-            val y = centerY + (radius * sin(angle)).toInt() - 50
+            val angle = index * goldenAngle
+            var x = centerX + (radius * cos(angle)).toInt() - 100
+            var y = centerY + (radius * sin(angle)).toInt() - 50
+            
+            // Ensure blocks stay within bounds
+            x = x.coerceIn(10, width - 210)
+            y = y.coerceIn(10, height - 110)
             
             val callerBlock = MethodBlock(
                 node = caller,
@@ -77,38 +81,113 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                 width = 200,
                 height = 100
             )
-            methodBlocks.add(callerBlock)
+            
+            // Check for collisions and adjust position
+            val adjustedBlock = resolveCollision(callerBlock)
+            methodBlocks.add(adjustedBlock)
             
             // Create connection from caller to parent
-            connections.add(Connection(callerBlock, parentBlock))
+            connections.add(Connection(adjustedBlock, parentBlock))
             
-            // Recursively layout callers of this caller (smaller radius)
+            // Recursively layout callers of this caller
             if (caller.callers.isNotEmpty()) {
-                layoutCallersRecursive(caller, callerBlock, x + 100, y + 50, radius / 2, 1)
+                layoutCallersRecursiveImproved(caller, adjustedBlock, adjustedBlock.x + 100, adjustedBlock.y + 50, radius * 0.7, 1)
             }
         }
     }
     
     /**
-     * Recursively layout callers with decreasing radius
+     * Calculate minimum radius to avoid overlaps
      */
-    private fun layoutCallersRecursive(
-        node: MethodCallTreeNode, 
-        parentBlock: MethodBlock, 
-        centerX: Int, 
-        centerY: Int, 
-        radius: Int, 
+    private fun calculateMinimumRadius(nodeCount: Int, blockWidth: Int, blockHeight: Int): Int {
+        if (nodeCount <= 1) return 150
+        
+        // Calculate circumference needed for all blocks with padding
+        val blockDiagonal = sqrt((blockWidth * blockWidth + blockHeight * blockHeight).toDouble())
+        val padding = 30 // Extra space between blocks
+        val totalCircumference = nodeCount * (blockDiagonal + padding)
+        
+        // Calculate radius from circumference
+        return (totalCircumference / (2 * PI)).toInt()
+    }
+    
+    /**
+     * Resolve collision by finding a non-overlapping position
+     */
+    private fun resolveCollision(newBlock: MethodBlock): MethodBlock {
+        var attempts = 0
+        var currentBlock = newBlock
+        
+        while (attempts < 20 && hasCollision(currentBlock)) {
+            // Try moving in a spiral pattern
+            val spiralRadius = 20 + attempts * 10
+            val spiralAngle = attempts * 0.5
+            
+            val newX = (currentBlock.x + spiralRadius * cos(spiralAngle)).toInt()
+            val newY = (currentBlock.y + spiralRadius * sin(spiralAngle)).toInt()
+            
+            currentBlock = MethodBlock(
+                node = currentBlock.node,
+                x = newX.coerceIn(10, width - currentBlock.width - 10),
+                y = newY.coerceIn(10, height - currentBlock.height - 10),
+                width = currentBlock.width,
+                height = currentBlock.height
+            )
+            
+            attempts++
+        }
+        
+        return currentBlock
+    }
+    
+    /**
+     * Check if a block collides with existing blocks
+     */
+    private fun hasCollision(block: MethodBlock): Boolean {
+        return methodBlocks.any { existingBlock ->
+            blocksOverlap(block, existingBlock)
+        }
+    }
+    
+    /**
+     * Check if two blocks overlap
+     */
+    private fun blocksOverlap(block1: MethodBlock, block2: MethodBlock): Boolean {
+        val padding = 15 // Minimum space between blocks
+        
+        return !(block1.x + block1.width + padding <= block2.x ||
+                block2.x + block2.width + padding <= block1.x ||
+                block1.y + block1.height + padding <= block2.y ||
+                block2.y + block2.height + padding <= block1.y)
+    }
+    
+    /**
+     * Recursively layout callers with improved spacing
+     */
+    private fun layoutCallersRecursiveImproved(
+        node: MethodCallTreeNode,
+        parentBlock: MethodBlock,
+        centerX: Int,
+        centerY: Int,
+        radius: Double,
         depth: Int
     ) {
-        if (depth > 3 || node.callers.isEmpty()) return // Limit depth
+        if (depth > 2 || node.callers.isEmpty()) return // Reduced depth to prevent overcrowding
         
         val callers = node.callers
-        val angleStep = 2 * PI / maxOf(callers.size, 1)
+        val minRadius = calculateMinimumRadius(callers.size, 150, 80)
+        val actualRadius = maxOf(minRadius, radius.toInt())
+        
+        val goldenAngle = PI * (3.0 - sqrt(5.0))
         
         callers.forEachIndexed { index, caller ->
-            val angle = index * angleStep
-            val x = centerX + (radius * cos(angle)).toInt() - 75
-            val y = centerY + (radius * sin(angle)).toInt() - 40
+            val angle = index * goldenAngle + depth * 0.5 // Offset by depth
+            var x = centerX + (actualRadius * cos(angle)).toInt() - 75
+            var y = centerY + (actualRadius * sin(angle)).toInt() - 40
+            
+            // Ensure blocks stay within bounds
+            x = x.coerceIn(10, width - 160)
+            y = y.coerceIn(10, height - 90)
             
             val callerBlock = MethodBlock(
                 node = caller,
@@ -117,11 +196,69 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                 width = 150,
                 height = 80
             )
-            methodBlocks.add(callerBlock)
-            connections.add(Connection(callerBlock, parentBlock))
+            
+            val adjustedBlock = resolveCollision(callerBlock)
+            methodBlocks.add(adjustedBlock)
+            connections.add(Connection(adjustedBlock, parentBlock))
             
             // Continue recursively with smaller radius
-            layoutCallersRecursive(caller, callerBlock, x + 75, y + 40, radius / 2, depth + 1)
+            layoutCallersRecursiveImproved(caller, adjustedBlock, adjustedBlock.x + 75, adjustedBlock.y + 40, actualRadius * 0.6, depth + 1)
+        }
+    }
+    
+    /**
+     * Apply force-based layout to improve spacing
+     */
+    private fun applyForceBasedLayout() {
+        val iterations = 50
+        val repulsionStrength = 1000.0
+        val dampening = 0.9
+        
+        repeat(iterations) {
+            val forces = mutableMapOf<MethodBlock, Pair<Double, Double>>()
+            
+            // Calculate repulsion forces between all blocks
+            for (i in methodBlocks.indices) {
+                for (j in i + 1 until methodBlocks.size) {
+                    val block1 = methodBlocks[i]
+                    val block2 = methodBlocks[j]
+                    
+                    val dx = (block2.x + block2.width / 2) - (block1.x + block1.width / 2)
+                    val dy = (block2.y + block2.height / 2) - (block1.y + block1.height / 2)
+                    val distance = sqrt((dx * dx + dy * dy).toDouble()).coerceAtLeast(1.0)
+                    
+                    val force = repulsionStrength / (distance * distance)
+                    val forceX = force * dx / distance
+                    val forceY = force * dy / distance
+                    
+                    // Apply opposite forces
+                    val force1 = forces.getOrDefault(block1, Pair(0.0, 0.0))
+                    val force2 = forces.getOrDefault(block2, Pair(0.0, 0.0))
+                    
+                    forces[block1] = Pair(force1.first - forceX, force1.second - forceY)
+                    forces[block2] = Pair(force2.first + forceX, force2.second + forceY)
+                }
+            }
+            
+            // Apply forces to move blocks (except root)
+            forces.forEach { (block, force) ->
+                if (block.node != rootNode) {
+                    val newX = (block.x + force.first * dampening).toInt()
+                    val newY = (block.y + force.second * dampening).toInt()
+                    
+                    // Update block position within bounds
+                    val index = methodBlocks.indexOf(block)
+                    if (index >= 0) {
+                        methodBlocks[index] = MethodBlock(
+                            node = block.node,
+                            x = newX.coerceIn(10, width - block.width - 10),
+                            y = newY.coerceIn(10, height - block.height - 10),
+                            width = block.width,
+                            height = block.height
+                        )
+                    }
+                }
+            }
         }
     }
     
@@ -182,8 +319,8 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         val g2d = g as Graphics2D
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         
-        // Relayout if size changed
-        if (methodBlocks.isNotEmpty() && (width != preferredSize.width || height != preferredSize.height)) {
+        // Layout nodes on first paint or when size changes
+        if (methodBlocks.isEmpty() || (width != preferredSize.width || height != preferredSize.height)) {
             layoutNodes()
         }
         

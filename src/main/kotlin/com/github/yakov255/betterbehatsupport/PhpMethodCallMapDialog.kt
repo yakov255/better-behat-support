@@ -10,7 +10,7 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
 
     init {
         init()
-        title = "PHP Method Call Mind Map"
+        title = "PHP Method Call Diagram"
         setSize(1000, 700)
     }
 
@@ -24,9 +24,9 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
             return dialogPanel
         }
 
-        // Create mindmap panel
-        val mindMapPanel = MethodCallMindMapPanel(rootCallTree)
-        val scrollPane = JScrollPane(mindMapPanel)
+        // Create block diagram panel
+        val blockDiagramPanel = MethodCallBlockDiagramPanel(rootCallTree)
+        val scrollPane = JScrollPane(blockDiagramPanel)
         scrollPane.preferredSize = JBUI.size(950, 600)
         scrollPane.horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         scrollPane.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
@@ -45,20 +45,20 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
      */
     private fun createInfoPanel(): JPanel {
         val infoPanel = JPanel(BorderLayout())
-        infoPanel.border = BorderFactory.createTitledBorder("Method Call Mind Map")
+        infoPanel.border = BorderFactory.createTitledBorder("Method Call Diagram")
         
         val infoText = """
             <html>
-            <b>Visual Call Map:</b><br>
-            • Center block shows the selected method with code context<br>
-            • Surrounding blocks show methods that call the center method<br>
+            <b>Block Diagram:</b><br>
+            • Left-to-right flow shows caller hierarchy leading to the selected method<br>
+            • Rightmost block shows the selected method<br>
             • Arrows indicate call direction (caller → callee)<br>
-            • Each block shows method signature and ±3 lines of code context<br>
+            • Each block shows only class and method name (ClassName::methodName)<br>
             <br>
             <b>Interaction:</b><br>
             • Click to select a method block<br>
             • Double-click on any method block to navigate to its definition<br>
-            • Scroll to explore larger call maps
+            • Scroll to explore larger call hierarchies
             </html>
         """.trimIndent()
         

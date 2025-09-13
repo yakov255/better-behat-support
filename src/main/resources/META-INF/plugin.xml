@@ -19,5 +19,12 @@
                 description="Shows a map of method calls for the current PHP method">
             <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="GenerateJavadoc"/>
         </action>
+        
+        <action id="PhpBetterBehatSupport.PhpMethodCallMapContext"
+                class="com.github.yakov255.betterbehatsupport.PhpMethodCallMapContextAction"
+                text="Show Call Map"
+                description="Shows a call map for the PHP method under cursor">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>

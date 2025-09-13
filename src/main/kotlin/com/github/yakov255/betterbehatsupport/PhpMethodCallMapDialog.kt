@@ -55,10 +55,12 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
             • Arrows indicate call direction (caller → callee)<br>
             • Each block shows only class and method name (ClassName::methodName)<br>
             <br>
-            <b>Interaction:</b><br>
+            <b>Navigation:</b><br>
             • Click to select a method block<br>
             • Double-click on any method block to navigate to its definition<br>
-            • Scroll to explore larger call hierarchies
+            • Mouse wheel to zoom in/out<br>
+            • Drag to pan around the diagram<br>
+            • Zoom level indicator shown in top-right corner
             </html>
         """.trimIndent()
         

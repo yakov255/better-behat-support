@@ -6,6 +6,12 @@ import com.intellij.util.ui.JBUI
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionAdapter
+import java.awt.event.MouseWheelEvent
+import java.awt.event.MouseWheelListener
+import java.awt.geom.AffineTransform
+import java.awt.geom.NoninvertibleTransformException
+import java.awt.geom.Point2D
 import javax.swing.JPanel
 import kotlin.math.*
 
@@ -23,10 +29,24 @@ class MethodCallBlockDiagramPanel(private val rootNode: MethodCallTreeNode?) : J
     private val leftMargin = 50
     private val topMargin = 50
     
+    // Zoom and pan variables
+    private var zoomFactor = 1.0
+    private var panX = 0.0
+    private var panY = 0.0
+    private var lastPanPoint: Point? = null
+    private var isPanning = false
+    
+    // Zoom constraints
+    private val minZoom = 0.1
+    private val maxZoom = 5.0
+    private val zoomStep = 0.1
+    
     init {
         background = JBColor.WHITE
         preferredSize = JBUI.size(1000, 600)
         setupMouseListener()
+        setupMouseWheelListener()
+        setupMouseMotionListener()
     }
     
     /**
@@ -159,19 +179,85 @@ class MethodCallBlockDiagramPanel(private val rootNode: MethodCallTreeNode?) : J
     }
     
     /**
-     * Setup mouse listener for navigation
+     * Setup mouse listener for navigation and panning
      */
     private fun setupMouseListener() {
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                val clickedBlock = findBlockAt(e.x, e.y)
-                if (clickedBlock != null) {
-                    if (e.clickCount == 2) {
-                        // Double-click to navigate
-                        navigateToMethod(clickedBlock.node)
-                    } else {
-                        // Single click to select
-                        selectedBlock = clickedBlock
+                if (!isPanning) {
+                    val transformedPoint = transformPoint(e.point)
+                    val clickedBlock = findBlockAt(transformedPoint.x.toInt(), transformedPoint.y.toInt())
+                    if (clickedBlock != null) {
+                        if (e.clickCount == 2) {
+                            // Double-click to navigate
+                            navigateToMethod(clickedBlock.node)
+                        } else {
+                            // Single click to select
+                            selectedBlock = clickedBlock
+                            repaint()
+                        }
+                    }
+                }
+            }
+            
+            override fun mousePressed(e: MouseEvent) {
+                if (e.button == MouseEvent.BUTTON1) {
+                    lastPanPoint = e.point
+                    isPanning = false
+                }
+            }
+            
+            override fun mouseReleased(e: MouseEvent) {
+                lastPanPoint = null
+                isPanning = false
+                cursor = Cursor.getDefaultCursor()
+            }
+        })
+    }
+    
+    /**
+     * Setup mouse wheel listener for zooming
+     */
+    private fun setupMouseWheelListener() {
+        addMouseWheelListener { e ->
+            val oldZoom = zoomFactor
+            val zoomChange = if (e.wheelRotation < 0) zoomStep else -zoomStep
+            zoomFactor = (zoomFactor + zoomChange).coerceIn(minZoom, maxZoom)
+            
+            if (zoomFactor != oldZoom) {
+                // Zoom towards mouse position
+                val mousePoint = e.point
+                val zoomRatio = zoomFactor / oldZoom
+                
+                panX = mousePoint.x - (mousePoint.x - panX) * zoomRatio
+                panY = mousePoint.y - (mousePoint.y - panY) * zoomRatio
+                
+                updatePreferredSize()
+                repaint()
+            }
+        }
+    }
+    
+    /**
+     * Setup mouse motion listener for panning
+     */
+    private fun setupMouseMotionListener() {
+        addMouseMotionListener(object : MouseMotionAdapter() {
+            override fun mouseDragged(e: MouseEvent) {
+                lastPanPoint?.let { lastPoint ->
+                    val dx = e.x - lastPoint.x
+                    val dy = e.y - lastPoint.y
+                    
+                    // Only start panning if we've moved a minimum distance
+                    if (!isPanning && (abs(dx) > 3 || abs(dy) > 3)) {
+                        isPanning = true
+                        cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)
+                    }
+                    
+                    if (isPanning) {
+                        panX += dx
+                        panY += dy
+                        lastPanPoint = e.point
                         repaint()
                     }
                 }
@@ -180,7 +266,30 @@ class MethodCallBlockDiagramPanel(private val rootNode: MethodCallTreeNode?) : J
     }
     
     /**
-     * Find method block at coordinates
+     * Transform screen coordinates to world coordinates
+     */
+    private fun transformPoint(screenPoint: Point): Point2D {
+        val worldX = (screenPoint.x - panX) / zoomFactor
+        val worldY = (screenPoint.y - panY) / zoomFactor
+        return Point2D.Double(worldX, worldY)
+    }
+    
+    /**
+     * Update preferred size based on zoom factor
+     */
+    private fun updatePreferredSize() {
+        if (methodBlocks.isNotEmpty()) {
+            val maxX = methodBlocks.maxOfOrNull { it.x + it.width } ?: 1000
+            val maxY = methodBlocks.maxOfOrNull { it.y + it.height } ?: 600
+            val scaledWidth = ((maxX + 100) * zoomFactor).toInt()
+            val scaledHeight = ((maxY + 100) * zoomFactor).toInt()
+            preferredSize = JBUI.size(maxOf(scaledWidth, 1000), maxOf(scaledHeight, 600))
+            revalidate()
+        }
+    }
+    
+    /**
+     * Find method block at coordinates (in world space)
      */
     private fun findBlockAt(x: Int, y: Int): MethodBlock? {
         return methodBlocks.find { block ->
@@ -220,11 +329,42 @@ class MethodCallBlockDiagramPanel(private val rootNode: MethodCallTreeNode?) : J
             layoutNodes()
         }
         
+        // Save original transform
+        val originalTransform = g2d.transform
+        
+        // Apply zoom and pan transformations
+        g2d.translate(panX, panY)
+        g2d.scale(zoomFactor, zoomFactor)
+        
         // Draw connections first (behind blocks)
         drawConnections(g2d)
         
         // Draw method blocks
         drawMethodBlocks(g2d)
+        
+        // Restore original transform
+        g2d.transform = originalTransform
+        
+        // Draw zoom indicator
+        drawZoomIndicator(g2d)
+    }
+    
+    /**
+     * Draw zoom level indicator
+     */
+    private fun drawZoomIndicator(g2d: Graphics2D) {
+        g2d.color = JBColor.DARK_GRAY
+        g2d.font = Font(Font.SANS_SERIF, Font.PLAIN, 12)
+        val zoomText = "Zoom: ${(zoomFactor * 100).toInt()}%"
+        val fontMetrics = g2d.fontMetrics
+        val textWidth = fontMetrics.stringWidth(zoomText)
+        g2d.drawString(zoomText, width - textWidth - 10, 20)
+        
+        // Draw instructions
+        g2d.font = Font(Font.SANS_SERIF, Font.PLAIN, 10)
+        g2d.color = JBColor.GRAY
+        val instructions = "Mouse wheel: zoom, Drag: pan"
+        g2d.drawString(instructions, 10, height - 10)
     }
     
     /**

@@ -13,13 +13,6 @@
     </extensions>
 
     <actions>
-        <action id="PhpBetterBehatSupport.PhpMethodCallMap"
-                class="com.github.yakov255.betterbehatsupport.PhpMethodCallMapAction"
-                text="Show PHP Method Call Map"
-                description="Shows a map of method calls for the current PHP method">
-            <add-to-group group-id="ToolsMenu" anchor="after" relative-to-action="GenerateJavadoc"/>
-        </action>
-        
         <action id="PhpBetterBehatSupport.PhpMethodCallMapContext"
                 class="com.github.yakov255.betterbehatsupport.PhpMethodCallMapContextAction"
                 text="Show Call Map"

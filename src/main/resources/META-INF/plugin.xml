@@ -15,8 +15,8 @@
     <actions>
         <action id="PhpBetterBehatSupport.PhpMethodCallMapContext"
                 class="com.github.yakov255.betterbehatsupport.PhpMethodCallMapContextAction"
-                text="Show Call Map"
-                description="Shows a call map for the PHP method under cursor">
+                text="Show Method Call Diagram"
+                description="Shows a method call diagram for the PHP method under cursor">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
     </actions>

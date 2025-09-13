@@ -11,7 +11,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.PsiTreeUtil
 
-class PhpMethodCallMapContextAction : AnAction("Show Call Map") {
+class PhpMethodCallMapContextAction : AnAction("Show Method Call Diagram") {
 
     override fun getActionUpdateThread(): ActionUpdateThread {
         return ActionUpdateThread.BGT

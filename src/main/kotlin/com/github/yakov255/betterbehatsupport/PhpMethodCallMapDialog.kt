@@ -10,7 +10,7 @@ class PhpMethodCallMapDialog(project: Project?, private val rootCallTree: Method
 
     init {
         init()
-        title = "PHP Method Call Diagram"
+        title = "Method Call Diagram"
         setSize(1000, 700)
     }
 

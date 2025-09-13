@@ -7,16 +7,12 @@ import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
-import java.awt.event.MouseWheelEvent
-import java.awt.event.MouseWheelListener
-import java.awt.geom.AffineTransform
-import java.awt.geom.NoninvertibleTransformException
 import java.awt.geom.Point2D
 import java.awt.geom.QuadCurve2D
 import javax.swing.JPanel
 import kotlin.math.*
 
-class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel() {
+class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel() {
     
     private val methodBlocks = mutableListOf<MethodBlock>()
     private val connections = mutableListOf<Connection>()
@@ -43,7 +39,7 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     }
     
     /**
-     * Layout nodes in a mindmap style with collision avoidance
+     * Layout nodes in a method call diagram style with collision avoidance
      */
     private fun layoutNodes() {
         if (rootNode == null) return
@@ -467,7 +463,7 @@ class MethodCallMindMapPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         // Draw instructions
         g2d.font = Font(Font.SANS_SERIF, Font.PLAIN, 10)
         g2d.color = JBColor.GRAY
-        val instructions = "Mouse wheel: zoom, Drag: pan"
+        val instructions = "Mouse wheel: zoom, Drag: pan, Double-click: navigate"
         g2d.drawString(instructions, 10, height - 10)
     }
     

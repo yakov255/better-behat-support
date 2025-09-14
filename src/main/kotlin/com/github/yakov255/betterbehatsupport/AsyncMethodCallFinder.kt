@@ -378,14 +378,7 @@ class AsyncMethodCallFinder(private val project: Project) {
     fun addQueueStatusListener(listener: (QueueStatus) -> Unit) {
         discoveryQueue.addStatusListener(listener)
     }
-    
-    /**
-     * Remove queue status listener
-     */
-    fun removeQueueStatusListener(listener: (QueueStatus) -> Unit) {
-        discoveryQueue.removeStatusListener(listener)
-    }
-    
+
     /**
      * Dispose and cleanup resources
      */

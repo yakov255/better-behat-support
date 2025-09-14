@@ -26,11 +26,6 @@ class CallDiscoveryCache {
         val fileHash: String? = null
     )
     
-    init {
-        // Listen for file changes to invalidate cache
-        setupFileChangeListener()
-    }
-    
     /**
      * Get cached callers for a method
      */
@@ -68,53 +63,7 @@ class CallDiscoveryCache {
         
         LOG.debug("Cached ${callers.size} callers for $methodId")
     }
-    
-    /**
-     * Invalidate cache entries for methods in files matching the pattern
-     */
-    fun invalidateCache(filePattern: String) {
-        val keysToRemove = callerCache.keys.filter { methodId ->
-            methodId.contains(filePattern, ignoreCase = true)
-        }
-        
-        keysToRemove.forEach { key ->
-            callerCache.remove(key)
-            cacheTimestamps.remove(key)
-        }
-        
-        if (keysToRemove.isNotEmpty()) {
-            LOG.debug("Invalidated ${keysToRemove.size} cache entries for pattern: $filePattern")
-        }
-    }
-    
-    /**
-     * Invalidate cache entry for a specific method
-     */
-    fun invalidateMethod(methodId: String) {
-        if (callerCache.remove(methodId) != null) {
-            cacheTimestamps.remove(methodId)
-            LOG.debug("Invalidated cache for method: $methodId")
-        }
-    }
-    
-    /**
-     * Clean up expired cache entries
-     */
-    fun cleanupExpiredEntries() {
-        val currentTime = System.currentTimeMillis()
-        val expiredKeys = callerCache.entries
-            .filter { (_, entry) -> currentTime - entry.timestamp > CACHE_EXPIRY_MS }
-            .map { it.key }
-        
-        expiredKeys.forEach { key ->
-            callerCache.remove(key)
-            cacheTimestamps.remove(key)
-        }
-        
-        if (expiredKeys.isNotEmpty()) {
-            LOG.debug("Cleaned up ${expiredKeys.size} expired cache entries")
-        }
-    }
+
     
     /**
      * Clean up oldest entries when cache is full
@@ -132,23 +81,7 @@ class CallDiscoveryCache {
         
         LOG.debug("Cleaned up ${entriesToRemove.size} oldest cache entries")
     }
-    
-    /**
-     * Get cache statistics
-     */
-    fun getCacheStats(): CacheStats {
-        cleanupExpiredEntries() // Clean up before reporting stats
-        
-        return CacheStats(
-            totalEntries = callerCache.size,
-            maxSize = MAX_CACHE_SIZE,
-            hitRate = 0.0, // Would need to track hits/misses for this
-            oldestEntryAge = if (cacheTimestamps.isNotEmpty()) {
-                System.currentTimeMillis() - cacheTimestamps.values.minOrNull()!!
-            } else 0L
-        )
-    }
-    
+
     /**
      * Clear all cache entries
      */
@@ -157,22 +90,6 @@ class CallDiscoveryCache {
         callerCache.clear()
         cacheTimestamps.clear()
         LOG.debug("Cleared all $size cache entries")
-    }
-    
-    /**
-     * Setup file change listener to invalidate cache
-     */
-    private fun setupFileChangeListener() {
-        // For now, we'll skip the file listener setup to avoid API compatibility issues
-        // In a production implementation, you would set up proper file change monitoring
-        // based on the specific IntelliJ Platform version being used
-        
-        // TODO: Implement file change listener based on platform version
-        // This would typically involve:
-        // 1. Getting the message bus connection
-        // 2. Subscribing to VirtualFileManager.VFS_CHANGES
-        // 3. Filtering for .php files
-        // 4. Invalidating relevant cache entries
     }
     
     /**
@@ -200,17 +117,4 @@ class CallDiscoveryCache {
             isUserExpanded = false
         )
     }
-}
-
-/**
- * Cache statistics data class
- */
-data class CacheStats(
-    val totalEntries: Int,
-    val maxSize: Int,
-    val hitRate: Double,
-    val oldestEntryAge: Long
-) {
-    val usagePercentage: Double get() = (totalEntries.toDouble() / maxSize) * 100
-    val oldestEntryAgeMinutes: Long get() = oldestEntryAge / (60 * 1000)
 }

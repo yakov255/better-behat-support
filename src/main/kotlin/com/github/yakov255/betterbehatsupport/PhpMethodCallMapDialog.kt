@@ -12,7 +12,7 @@ class PhpMethodCallMapDialog(private val project: Project?, private val rootCall
 
     init {
         init()
-        title = "Method Call Diagram - Async Loading"
+        title = "Method Call Diagram"
         setSize(1000, 700)
     }
 
@@ -34,50 +34,10 @@ class PhpMethodCallMapDialog(private val project: Project?, private val rootCall
         scrollPane.verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
         
         dialogPanel.add(scrollPane, BorderLayout.CENTER)
-        
-        // Add info panel with queue status
-        val infoPanel = createInfoPanel()
-        dialogPanel.add(infoPanel, BorderLayout.SOUTH)
-        
+
         return dialogPanel
     }
-    
-    /**
-     * Create info panel with async loading instructions
-     */
-    private fun createInfoPanel(): JPanel {
-        val infoPanel = JPanel(BorderLayout())
-        infoPanel.border = BorderFactory.createTitledBorder("Async Method Call Diagram")
-        
-        val infoText = """
-            <html>
-            <b>Progressive Loading:</b><br>
-            • Method blocks load callers progressively as you expand them<br>
-            • Click ▶ button to expand and find callers for a method<br>
-            • Loading spinner shows when searching for callers<br>
-            • Progress bar indicates search progress<br>
-            • Error indicator (⚠) appears if search fails - click to retry<br>
-            <br>
-            <b>Visual Indicators:</b><br>
-            • Blue blocks: Currently loading callers<br>
-            • Red blocks: Error occurred during loading<br>
-            • Gray blocks: Ready to expand<br>
-            • Cyan block: Root method (your selected method)<br>
-            <br>
-            <b>Navigation:</b><br>
-            • Click ▶ to expand callers (async loading)<br>
-            • Click ▼ to collapse expanded callers<br>
-            • Double-click any block to navigate to method definition<br>
-            • Mouse wheel to zoom, drag to pan<br>
-            • Hover for detailed tooltips
-            </html>
-        """.trimIndent()
-        
-        val infoLabel = JLabel(infoText)
-        infoPanel.add(infoLabel, BorderLayout.CENTER)
-        
-        return infoPanel
-    }
+
     
     override fun createActions(): Array<Action> {
         return arrayOf(okAction)

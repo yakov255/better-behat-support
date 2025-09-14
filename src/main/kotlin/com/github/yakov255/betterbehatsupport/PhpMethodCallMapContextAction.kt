@@ -41,9 +41,17 @@ class PhpMethodCallMapContextAction : AnAction("Show Method Call Diagram") {
 
         val project: Project = e.project ?: return
         
-        // Use the existing call tree building logic
-        val callTree = PhpMethodCallFinder.buildMethodCallTree(project, e)
-        PhpMethodCallMapDialog(project, callTree).show()
+        // Use the new async system - create initial tree node
+        val asyncFinder = AsyncMethodCallFinder(project)
+        val initialTree = asyncFinder.buildInitialTree(phpMethod)
+        
+        if (initialTree != null) {
+            PhpMethodCallMapDialog(project, initialTree).show()
+        } else {
+            // Fallback to synchronous method if async fails
+            val callTree = PhpMethodCallFinder.buildMethodCallTree(project, e)
+            PhpMethodCallMapDialog(project, callTree).show()
+        }
     }
 
     /**

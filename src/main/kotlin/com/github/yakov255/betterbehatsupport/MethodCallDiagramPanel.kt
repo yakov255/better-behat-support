@@ -1,5 +1,6 @@
 package com.github.yakov255.betterbehatsupport
 
+import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
@@ -10,13 +11,21 @@ import java.awt.event.MouseMotionAdapter
 import java.awt.geom.Point2D
 import java.awt.geom.QuadCurve2D
 import javax.swing.JPanel
+import javax.swing.ToolTipManager
 import kotlin.math.*
 
-class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel() {
+class MethodCallDiagramPanel(
+    private var rootNode: MethodCallTreeNode?,
+    private val project: Project
+) : JPanel() {
     
-    private val methodBlocks = mutableListOf<MethodBlock>()
+    private val methodBlocks = mutableListOf<ExpandableMethodBlock>()
     private val connections = mutableListOf<Connection>()
-    private var selectedBlock: MethodBlock? = null
+    private var selectedBlock: ExpandableMethodBlock? = null
+    
+    // Async components
+    private val asyncFinder = AsyncMethodCallFinder(project)
+    private val animationManager = LoadingAnimationManager()
     
     // Zoom and pan variables
     private var zoomFactor = 1.0
@@ -36,6 +45,118 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         setupMouseListener()
         setupMouseWheelListener()
         setupMouseMotionListener()
+        setupTooltips()
+        setupAsyncComponents()
+    }
+    
+    /**
+     * Setup tooltip support
+     */
+    private fun setupTooltips() {
+        ToolTipManager.sharedInstance().registerComponent(this)
+    }
+    
+    /**
+     * Setup async components and listeners
+     */
+    private fun setupAsyncComponents() {
+        println("MethodCallDiagramPanel: Setting up async components")
+        
+        // Listen for node updates
+        asyncFinder.addNodeUpdateListener { node ->
+            println("MethodCallDiagramPanel: Node update received for ${node.methodId}, state: ${node.loadingState}")
+            updateNodeInBlocks(node)
+            repaint()
+        }
+        
+        // Listen for animation updates
+        animationManager.addAnimationListener {
+            repaint()
+        }
+        
+        // Start progressive discovery if we have a root node
+        rootNode?.let { root ->
+            println("MethodCallDiagramPanel: Starting progressive discovery for root: ${root.methodSignature}")
+            asyncFinder.startProgressiveDiscovery(root) { updatedNode ->
+                println("MethodCallDiagramPanel: Progressive discovery update for ${updatedNode.methodId}")
+                updateNodeInBlocks(updatedNode)
+                repaint()
+            }
+        }
+    }
+    
+    /**
+     * Update a node in the method blocks list
+     */
+    private fun updateNodeInBlocks(updatedNode: MethodCallTreeNode) {
+        methodBlocks.find { it.node.methodId == updatedNode.methodId }?.let { block ->
+            // Update the block's node reference
+            val index = methodBlocks.indexOf(block)
+            if (index >= 0) {
+                // The node is updated in place, just trigger animation if needed
+                if (updatedNode.isLoading() && !animationManager.isAnimating()) {
+                    animationManager.startAnimation()
+                } else if (!hasAnyLoadingBlocks() && animationManager.isAnimating()) {
+                    animationManager.stopAnimation()
+                }
+            }
+        }
+        
+        // Add new caller blocks if they were discovered
+        if (updatedNode.loadingState == LoadingState.LOADED) {
+            addNewCallerBlocks(updatedNode)
+        }
+    }
+    
+    /**
+     * Check if any blocks are currently loading
+     */
+    private fun hasAnyLoadingBlocks(): Boolean {
+        return methodBlocks.any { it.node.isLoading() }
+    }
+    
+    /**
+     * Add new caller blocks for a node that just finished loading
+     */
+    private fun addNewCallerBlocks(parentNode: MethodCallTreeNode) {
+        val existingNodeIds = methodBlocks.map { it.node.methodId }.toSet()
+        
+        parentNode.callers.forEach { caller ->
+            if (!existingNodeIds.contains(caller.methodId)) {
+                // Position new blocks around the parent
+                val parentBlock = methodBlocks.find { it.node.methodId == parentNode.methodId }
+                if (parentBlock != null) {
+                    val newBlock = createBlockForNode(caller, parentBlock)
+                    methodBlocks.add(newBlock)
+                    
+                    // Create connection
+                    connections.add(Connection(newBlock, parentBlock))
+                }
+            }
+        }
+        
+        // Re-layout to avoid overlaps
+        applyForceBasedLayout()
+    }
+    
+    /**
+     * Create a new block for a node positioned relative to a parent block
+     */
+    private fun createBlockForNode(node: MethodCallTreeNode, parentBlock: ExpandableMethodBlock): ExpandableMethodBlock {
+        // Position around the parent with some randomization to avoid exact overlaps
+        val angle = Math.random() * 2 * Math.PI
+        val distance = 250 + (Math.random() * 100).toInt()
+        
+        val x = (parentBlock.x + distance * cos(angle)).toInt().coerceIn(10, width - 210)
+        val y = (parentBlock.y + distance * sin(angle)).toInt().coerceIn(10, height - 110)
+        
+        return ExpandableMethodBlock(
+            node = node,
+            x = x,
+            y = y,
+            width = 200,
+            height = 100
+        )
     }
     
     /**
@@ -51,8 +172,8 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         val centerY = height / 2
         
         // Create root block at center
-        val rootBlock = MethodBlock(
-            node = rootNode,
+        val rootBlock = ExpandableMethodBlock(
+            node = rootNode!!,
             x = centerX - 100,
             y = centerY - 50,
             width = 200,
@@ -60,8 +181,8 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         )
         methodBlocks.add(rootBlock)
         
-        // Layout callers around the root with improved algorithm
-        layoutCallersImproved(rootNode, rootBlock, centerX, centerY)
+        // Layout existing callers around the root
+        layoutCallersImproved(rootNode!!, rootBlock, centerX, centerY)
         
         // Apply force-based layout to resolve overlaps
         applyForceBasedLayout()
@@ -70,7 +191,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     /**
      * Improved layout for caller nodes with better spacing
      */
-    private fun layoutCallersImproved(node: MethodCallTreeNode, parentBlock: MethodBlock, centerX: Int, centerY: Int) {
+    private fun layoutCallersImproved(node: MethodCallTreeNode, parentBlock: ExpandableMethodBlock, centerX: Int, centerY: Int) {
         val callers = node.callers
         if (callers.isEmpty()) return
         
@@ -90,7 +211,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
             x = x.coerceIn(10, width - 210)
             y = y.coerceIn(10, height - 110)
             
-            val callerBlock = MethodBlock(
+            val callerBlock = ExpandableMethodBlock(
                 node = caller,
                 x = x,
                 y = y,
@@ -130,7 +251,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     /**
      * Resolve collision by finding a non-overlapping position
      */
-    private fun resolveCollision(newBlock: MethodBlock): MethodBlock {
+    private fun resolveCollision(newBlock: ExpandableMethodBlock): ExpandableMethodBlock {
         var attempts = 0
         var currentBlock = newBlock
         
@@ -142,7 +263,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
             val newX = (currentBlock.x + spiralRadius * cos(spiralAngle)).toInt()
             val newY = (currentBlock.y + spiralRadius * sin(spiralAngle)).toInt()
             
-            currentBlock = MethodBlock(
+            currentBlock = ExpandableMethodBlock(
                 node = currentBlock.node,
                 x = newX.coerceIn(10, width - currentBlock.width - 10),
                 y = newY.coerceIn(10, height - currentBlock.height - 10),
@@ -159,7 +280,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     /**
      * Check if a block collides with existing blocks
      */
-    private fun hasCollision(block: MethodBlock): Boolean {
+    private fun hasCollision(block: ExpandableMethodBlock): Boolean {
         return methodBlocks.any { existingBlock ->
             blocksOverlap(block, existingBlock)
         }
@@ -168,7 +289,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     /**
      * Check if two blocks overlap
      */
-    private fun blocksOverlap(block1: MethodBlock, block2: MethodBlock): Boolean {
+    private fun blocksOverlap(block1: ExpandableMethodBlock, block2: ExpandableMethodBlock): Boolean {
         val padding = 15 // Minimum space between blocks
         
         return !(block1.x + block1.width + padding <= block2.x ||
@@ -182,7 +303,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
      */
     private fun layoutCallersRecursiveImproved(
         node: MethodCallTreeNode,
-        parentBlock: MethodBlock,
+        parentBlock: ExpandableMethodBlock,
         centerX: Int,
         centerY: Int,
         radius: Double,
@@ -205,7 +326,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
             x = x.coerceIn(10, width - 160)
             y = y.coerceIn(10, height - 90)
             
-            val callerBlock = MethodBlock(
+            val callerBlock = ExpandableMethodBlock(
                 node = caller,
                 x = x,
                 y = y,
@@ -231,7 +352,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         val dampening = 0.9
         
         repeat(iterations) {
-            val forces = mutableMapOf<MethodBlock, Pair<Double, Double>>()
+            val forces = mutableMapOf<ExpandableMethodBlock, Pair<Double, Double>>()
             
             // Calculate repulsion forces between all blocks
             for (i in methodBlocks.indices) {
@@ -265,12 +386,16 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                     // Update block position within bounds
                     val index = methodBlocks.indexOf(block)
                     if (index >= 0) {
-                        methodBlocks[index] = MethodBlock(
+                        methodBlocks[index] = ExpandableMethodBlock(
                             node = block.node,
                             x = newX.coerceIn(10, width - block.width - 10),
                             y = newY.coerceIn(10, height - block.height - 10),
                             width = block.width,
-                            height = block.height
+                            height = block.height,
+                            isHovered = block.isHovered,
+                            isExpandButtonHovered = block.isExpandButtonHovered,
+                            showExpandButton = block.showExpandButton,
+                            showLoadingIndicator = block.showLoadingIndicator
                         )
                     }
                 }
@@ -279,7 +404,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     }
     
     /**
-     * Setup mouse listener for navigation and panning
+     * Setup mouse listener for navigation, panning, and expansion
      */
     private fun setupMouseListener() {
         addMouseListener(object : MouseAdapter() {
@@ -287,8 +412,12 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                 if (!isPanning) {
                     val transformedPoint = transformPoint(e.point)
                     val clickedBlock = findBlockAt(transformedPoint.x.toInt(), transformedPoint.y.toInt())
+                    
                     if (clickedBlock != null) {
-                        if (e.clickCount == 2) {
+                        // Check if expand button was clicked
+                        if (clickedBlock.containsExpandButton(Point(transformedPoint.x.toInt(), transformedPoint.y.toInt()))) {
+                            handleExpandButtonClick(clickedBlock)
+                        } else if (e.clickCount == 2) {
                             // Double-click to navigate
                             navigateToMethod(clickedBlock.node)
                         } else {
@@ -296,6 +425,10 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                             selectedBlock = clickedBlock
                             repaint()
                         }
+                    } else {
+                        // Click on empty space - deselect
+                        selectedBlock = null
+                        repaint()
                     }
                 }
             }
@@ -313,6 +446,73 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                 cursor = Cursor.getDefaultCursor()
             }
         })
+    }
+    
+    /**
+     * Handle expand button click
+     */
+    private fun handleExpandButtonClick(block: ExpandableMethodBlock) {
+        when (block.node.loadingState) {
+            LoadingState.EXPANDABLE, LoadingState.NOT_LOADED -> {
+                // Start async expansion
+                asyncFinder.expandNodeAsync(block.node, TaskPriority.HIGH)
+                block.node.isUserExpanded = true
+            }
+            LoadingState.ERROR -> {
+                // Retry on error
+                block.node.resetForRetry()
+                asyncFinder.expandNodeAsync(block.node, TaskPriority.HIGH)
+            }
+            LoadingState.LOADING -> {
+                // Cancel loading
+                asyncFinder.cancelNodeExpansion(block.node)
+            }
+            LoadingState.LOADED -> {
+                // Toggle collapse/expand
+                block.node.isExpanded = !block.node.isExpanded
+                updateLayoutAfterToggle()
+            }
+        }
+        repaint()
+    }
+    
+    /**
+     * Update layout after toggling node expansion
+     */
+    private fun updateLayoutAfterToggle() {
+        // Remove collapsed caller blocks
+        val visibleNodeIds = getVisibleNodeIds()
+        methodBlocks.removeAll { block ->
+            !visibleNodeIds.contains(block.node.methodId)
+        }
+        
+        // Remove connections to invisible blocks
+        connections.removeAll { connection ->
+            !visibleNodeIds.contains(connection.from.node.methodId) ||
+            !visibleNodeIds.contains(connection.to.node.methodId)
+        }
+        
+        // Re-layout remaining blocks
+        applyForceBasedLayout()
+    }
+    
+    /**
+     * Get IDs of all visible nodes (expanded hierarchy)
+     */
+    private fun getVisibleNodeIds(): Set<String> {
+        val visibleIds = mutableSetOf<String>()
+        
+        fun addVisibleNodes(node: MethodCallTreeNode) {
+            visibleIds.add(node.methodId)
+            if (node.isExpanded) {
+                node.callers.forEach { caller ->
+                    addVisibleNodes(caller)
+                }
+            }
+        }
+        
+        rootNode?.let { addVisibleNodes(it) }
+        return visibleIds
     }
     
     /**
@@ -339,7 +539,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     }
     
     /**
-     * Setup mouse motion listener for panning
+     * Setup mouse motion listener for panning and hover effects
      */
     private fun setupMouseMotionListener() {
         addMouseMotionListener(object : MouseMotionAdapter() {
@@ -362,7 +562,49 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
                     }
                 }
             }
+            
+            override fun mouseMoved(e: MouseEvent) {
+                if (!isPanning) {
+                    val transformedPoint = transformPoint(e.point)
+                    val hoveredBlock = findBlockAt(transformedPoint.x.toInt(), transformedPoint.y.toInt())
+                    
+                    // Update hover states
+                    var needsRepaint = false
+                    methodBlocks.forEach { block ->
+                        val wasHovered = block.isHovered
+                        val wasExpandButtonHovered = block.isExpandButtonHovered
+                        
+                        block.isHovered = (block == hoveredBlock)
+                        block.isExpandButtonHovered = (block == hoveredBlock) &&
+                            block.containsExpandButton(Point(transformedPoint.x.toInt(), transformedPoint.y.toInt()))
+                        
+                        if (wasHovered != block.isHovered || wasExpandButtonHovered != block.isExpandButtonHovered) {
+                            needsRepaint = true
+                        }
+                    }
+                    
+                    // Update cursor
+                    cursor = when {
+                        hoveredBlock?.isExpandButtonHovered == true -> Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                        hoveredBlock != null -> Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)
+                        else -> Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR)
+                    }
+                    
+                    if (needsRepaint) {
+                        repaint()
+                    }
+                }
+            }
         })
+    }
+    
+    /**
+     * Get tooltip text for the component at the given point
+     */
+    override fun getToolTipText(event: MouseEvent): String? {
+        val transformedPoint = transformPoint(event.point)
+        val block = findBlockAt(transformedPoint.x.toInt(), transformedPoint.y.toInt())
+        return block?.getTooltipText()
     }
     
     /**
@@ -391,7 +633,7 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     /**
      * Find method block at coordinates
      */
-    private fun findBlockAt(x: Int, y: Int): MethodBlock? {
+    private fun findBlockAt(x: Int, y: Int): ExpandableMethodBlock? {
         return methodBlocks.find { block ->
             x >= block.x && x <= block.x + block.width &&
             y >= block.y && y <= block.y + block.height
@@ -526,32 +768,45 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
     }
     
     /**
-     * Draw method blocks with code context
+     * Draw method blocks with loading animations and expand controls
      */
     private fun drawMethodBlocks(g2d: Graphics2D) {
-        methodBlocks.forEach { block ->
+        // Sort blocks by display priority (higher priority on top)
+        val sortedBlocks = methodBlocks.sortedBy { it.getDisplayPriority() }
+        
+        sortedBlocks.forEach { block ->
             drawMethodBlock(g2d, block)
         }
     }
     
     /**
-     * Draw individual method block
+     * Draw individual method block with async loading support
      */
-    private fun drawMethodBlock(g2d: Graphics2D, block: MethodBlock) {
-        val isSelected = block == selectedBlock
-        val isRoot = block.node == rootNode
+    private fun drawMethodBlock(g2d: Graphics2D, block: ExpandableMethodBlock) {
+        val isSelected = block.isSelected(selectedBlock)
+        val isRoot = block.isRootNode(rootNode)
+        val isHovered = block.isHovered
         
-        // Block background
+        // Block background with loading state colors
         g2d.color = when {
+            block.node.hasError() -> JBColor.RED.brighter()
+            block.node.isLoading() -> JBColor.YELLOW.brighter()
             isRoot -> JBColor.CYAN.darker()
-            isSelected -> JBColor.YELLOW.darker()
+            isSelected -> JBColor.BLUE.brighter()
+            isHovered -> JBColor.LIGHT_GRAY.brighter()
             else -> JBColor.LIGHT_GRAY
         }
         g2d.fillRoundRect(block.x, block.y, block.width, block.height, 10, 10)
         
-        // Block border
-        g2d.color = if (isSelected) JBColor.BLUE else JBColor.DARK_GRAY
-        g2d.stroke = BasicStroke(if (isSelected) 3f else 1f)
+        // Block border with state-specific styling
+        g2d.color = when {
+            block.node.hasError() -> JBColor.RED
+            block.node.isLoading() -> JBColor.ORANGE
+            isSelected -> JBColor.BLUE
+            isHovered -> JBColor.DARK_GRAY.brighter()
+            else -> JBColor.DARK_GRAY
+        }
+        g2d.stroke = BasicStroke(if (isSelected) 3f else if (isHovered) 2f else 1f)
         g2d.drawRoundRect(block.x, block.y, block.width, block.height, 10, 10)
         
         // Method signature
@@ -561,35 +816,153 @@ class MethodCallDiagramPanel(private val rootNode: MethodCallTreeNode?) : JPanel
         val truncatedName = if (methodName.length > 25) methodName.substring(0, 22) + "..." else methodName
         g2d.drawString(truncatedName, block.x + 5, block.y + 15)
         
-        // Code context (mini editor)
-        g2d.font = Font(Font.MONOSPACED, Font.PLAIN, 9)
-        val codeLines = block.node.getFormattedCodeContext().split("\n")
-        var yOffset = 30
-        
-        codeLines.take(5).forEach { line -> // Show max 5 lines
-            val truncatedLine = if (line.length > 30) line.substring(0, 27) + "..." else line
-            g2d.color = if (line.startsWith("→")) JBColor.RED else JBColor.DARK_GRAY
-            g2d.drawString(truncatedLine, block.x + 5, block.y + yOffset)
-            yOffset += 12
+        // Code context (mini editor) - only if not loading
+        if (!block.node.isLoading()) {
+            g2d.font = Font(Font.MONOSPACED, Font.PLAIN, 9)
+            val codeLines = block.node.getFormattedCodeContext().split("\n")
+            var yOffset = 30
+            
+            codeLines.take(4).forEach { line -> // Show max 4 lines to leave space for indicators
+                val truncatedLine = if (line.length > 30) line.substring(0, 27) + "..." else line
+                g2d.color = if (line.startsWith("→")) JBColor.RED else JBColor.DARK_GRAY
+                g2d.drawString(truncatedLine, block.x + 5, block.y + yOffset)
+                yOffset += 12
+            }
         }
+        
+        // Draw loading indicators and controls
+        drawBlockIndicators(g2d, block)
     }
     
     /**
-     * Data class for method block positioning
+     * Draw loading indicators and expand controls for a block
      */
-    private data class MethodBlock(
-        val node: MethodCallTreeNode,
-        val x: Int,
-        val y: Int,
-        val width: Int,
-        val height: Int
-    )
+    private fun drawBlockIndicators(g2d: Graphics2D, block: ExpandableMethodBlock) {
+        // Draw expand/collapse button
+        if (block.shouldShowExpandButton()) {
+            val buttonBounds = block.getExpandButtonBounds()
+            animationManager.drawExpandButton(
+                g2d,
+                buttonBounds.x,
+                buttonBounds.y,
+                buttonBounds.width,
+                block.node.isExpanded,
+                block.isExpandButtonHovered
+            )
+        }
+        
+        // Draw loading spinner
+        if (block.shouldShowSpinner()) {
+            val indicatorBounds = block.getLoadingIndicatorBounds()
+            animationManager.drawSpinner(
+                g2d,
+                indicatorBounds.x,
+                indicatorBounds.y,
+                indicatorBounds.width
+            )
+        }
+        
+        // Draw progress bar
+        if (block.shouldShowProgressBar()) {
+            val progressBounds = block.getProgressBarBounds()
+            animationManager.drawProgressBar(
+                g2d,
+                progressBounds.x,
+                progressBounds.y,
+                progressBounds.width,
+                block.node.loadingProgress,
+                progressBounds.height
+            )
+        }
+        
+        // Draw error indicator
+        if (block.shouldShowErrorIndicator()) {
+            val indicatorBounds = block.getLoadingIndicatorBounds()
+            animationManager.drawErrorIndicator(
+                g2d,
+                indicatorBounds.x,
+                indicatorBounds.y,
+                indicatorBounds.width
+            )
+        }
+        
+        // Draw pending indicator
+        if (block.shouldShowPendingIndicator()) {
+            val indicatorBounds = block.getLoadingIndicatorBounds()
+            animationManager.drawPendingIndicator(
+                g2d,
+                indicatorBounds.x,
+                indicatorBounds.y,
+                indicatorBounds.width
+            )
+        }
+        
+        // Draw loading state text for debugging (can be removed later)
+        if (block.node.loadingState != LoadingState.NOT_LOADED) {
+            g2d.color = JBColor.DARK_GRAY
+            g2d.font = Font(Font.SANS_SERIF, Font.PLAIN, 8)
+            val stateText = block.node.loadingState.name
+            g2d.drawString(stateText, block.x + 5, block.y + block.height - 5)
+        }
+    }
     
     /**
      * Data class for connections between blocks
      */
     private data class Connection(
-        val from: MethodBlock,
-        val to: MethodBlock
+        val from: ExpandableMethodBlock,
+        val to: ExpandableMethodBlock
     )
+    
+    /**
+     * Set a new root node and restart progressive discovery
+     */
+    fun setRootNode(newRootNode: MethodCallTreeNode?) {
+        // Cancel existing operations
+        asyncFinder.cancelAllOperations()
+        animationManager.stopAnimation()
+        
+        // Clear existing state
+        methodBlocks.clear()
+        connections.clear()
+        selectedBlock = null
+        
+        // Set new root
+        rootNode = newRootNode
+        
+        // Start new discovery if we have a root
+        rootNode?.let { root ->
+            asyncFinder.startProgressiveDiscovery(root) { updatedNode ->
+                updateNodeInBlocks(updatedNode)
+                repaint()
+            }
+        }
+        
+        repaint()
+    }
+    
+    /**
+     * Get current queue status for display
+     */
+    fun getQueueStatus(): QueueStatus {
+        return asyncFinder.getQueueStatus()
+    }
+    
+    /**
+     * Cancel all async operations
+     */
+    fun cancelAllOperations() {
+        asyncFinder.cancelAllOperations()
+        animationManager.stopAnimation()
+    }
+    
+    /**
+     * Dispose and cleanup resources
+     */
+    fun dispose() {
+        asyncFinder.dispose()
+        animationManager.dispose()
+        methodBlocks.clear()
+        connections.clear()
+    }
 }

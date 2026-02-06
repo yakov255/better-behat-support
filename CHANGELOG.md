@@ -3,6 +3,12 @@
 # Behat external file handling enhancements Changelog
 
 ## Unreleased
+
+## [1.4.0]
+- Support all file extensions (not limited to json, xml, txt)
+- Minimum extension length of 2 characters to avoid false positives
+
+## [1.3.0]
 - Added support for 2025.2 and up
 - Removed Rename File quick action
 

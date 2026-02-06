@@ -18,7 +18,7 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                 override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
                     val step = element as GherkinStep
                     val text = step.text
-                    val matcher = Pattern.compile("(\\S+\\.(json|xml|txt))").matcher(text)
+                    val matcher = Pattern.compile("(\\S+\\.\\S{2,})").matcher(text)
                     val references = mutableListOf<PsiReference>()
 
                     // There is no virtualFile when autocompletion

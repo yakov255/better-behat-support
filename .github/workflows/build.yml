@@ -30,6 +30,8 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    outputs:
+      artifact-name: ${{ steps.artifact.outputs.filename }}
     steps:
 
       # Free GitHub Actions Environment Disk Space
@@ -75,6 +77,13 @@ jobs:
         with:
           name: ${{ steps.artifact.outputs.filename }}
           path: ./build/distributions/content/*/*
+
+      # Upload the ZIP file for the release job
+      - name: Upload Plugin ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zip
+          path: ./build/distributions/*.zip
 
   # Run tests and upload a code coverage report
   test:
@@ -222,6 +231,19 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v5
 
+      # Setup Gradle for changelog generation
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+
+      # Download the built plugin ZIP from the build job
+      - name: Download Plugin ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-zip
+          path: ./
+
       # Remove old release drafts by using the curl request for the available releases with a draft flag
       - name: Remove Old Release Drafts
         env:
@@ -243,4 +265,5 @@ jobs:
           gh release create $VERSION \
             --draft \
             --title $VERSION \
-            --notes-file $RELEASE_NOTE
+            --notes-file $RELEASE_NOTE \
+            *.zip

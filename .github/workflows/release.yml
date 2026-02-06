@@ -46,9 +46,9 @@ jobs:
       - name: Build Plugin
         run: ./gradlew buildPlugin
 
-      # Upload an artifact as a release asset
+      # Upload an artifact as a release asset (overwrite if already exists from draft)
       - name: Upload Release Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.event.release.tag_name }} ./build/distributions/*
+        run: gh release upload ${{ github.event.release.tag_name }} ./build/distributions/*.zip --clobber
 

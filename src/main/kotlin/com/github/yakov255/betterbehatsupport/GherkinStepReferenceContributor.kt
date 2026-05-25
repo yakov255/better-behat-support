@@ -9,7 +9,7 @@ import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.ProjectFileIndex
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.util.ProcessingContext
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
 import java.util.regex.Pattern
@@ -67,8 +67,10 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
         val allByName = FilenameIndex.getVirtualFilesByName(fileNameOnly, scope)
             .filter { !it.isDirectory }
 
-        val fileIndex = ProjectFileIndex.getInstance(project)
-        val contentFiles = allByName.filter { fileIndex.isInContent(it) }
+        val contentRoots = ProjectRootManager.getInstance(project).contentRoots.toList()
+        val contentFiles = allByName.filter { file ->
+            contentRoots.any { root -> VfsUtil.isAncestor(root, file, false) }
+        }
 
         if (contentFiles.isNotEmpty()) {
             return contentFiles

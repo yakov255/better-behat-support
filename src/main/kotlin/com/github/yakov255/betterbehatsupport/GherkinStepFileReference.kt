@@ -33,26 +33,24 @@ class GherkinStepFileReference(
 
     @Throws(IncorrectOperationException::class)
     override fun handleElementRename(newFileName: String): PsiElement {
-        val newStart = rangeInElement.endOffset - virtualFile.name.length
-        val newStepText = myElement.text.substring(0, newStart) + newFileName + myElement.text.substring(rangeInElement.endOffset, myElement.text.length)
+        val newStepText = buildString {
+            append(myElement.text.substring(0, rangeInElement.startOffset))
+            append(newFileName)
+            append(myElement.text.substring(rangeInElement.endOffset))
+        }
 
         val scenario = myElement.parent as GherkinScenario
-
-        val newScenarioText = scenario.text.replace(myElement.text, newStepText)
-        val stepIndex = scenario.steps.indexOf(myElement)
-
-
         val feature = scenario.parent as GherkinFeature
         val file = feature.parent as GherkinFile
         val language = file.localeLanguage
-
-        // There is no GherkinStepFactory or createStepFromText
         val project = scenario.project
-        val updatedScenario =
-            GherkinElementFactory.createScenarioFromText(project, language, newScenarioText) as GherkinScenario
-        val updatedElement = updatedScenario.steps.elementAt(stepIndex)
 
-        // Update element (changes element in the editor)
+        val wrapperText = "Scenario:\n$newStepText"
+        val minimalScenario = GherkinElementFactory.createScenarioFromText(
+            project, language, wrapperText
+        ) as GherkinScenario
+        val updatedElement = minimalScenario.steps.first()
+
         myElement.replace(updatedElement)
 
         return updatedElement

@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+## [1.5.0]
+- Performance: Pattern.compile extracted to companion object
+- Performance: VFS recursive traversal replaced with direct path + FilenameIndex
+- Performance: Added ProgressManager.checkCanceled to prevent EDT freezes
+- Performance: Added ProjectFileIndex.isInContent filter to exclude vendor files
+
 ## [1.4.0]
 - Support all file extensions (not limited to json, xml, txt)
 - Minimum extension length of 2 characters to avoid false positives

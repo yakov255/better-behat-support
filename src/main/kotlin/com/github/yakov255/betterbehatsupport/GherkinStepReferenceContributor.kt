@@ -1,16 +1,25 @@
 package com.github.yakov255.betterbehatsupport
 
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.*
-import com.intellij.util.ProcessingContext
 import com.intellij.patterns.PlatformPatterns
-import com.intellij.psi.PsiReferenceContributor
-import com.intellij.psi.PsiReferenceProvider
+import com.intellij.psi.*
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.ProjectFileIndex
+import com.intellij.util.ProcessingContext
 import org.jetbrains.plugins.cucumber.psi.GherkinStep
 import java.util.regex.Pattern
 
 class GherkinStepReferenceContributor : PsiReferenceContributor() {
+
+    companion object {
+        private val STEP_FILE_PATTERN = Pattern.compile("(\\S+\\.\\S{2,})")
+    }
+
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         registrar.registerReferenceProvider(
             PlatformPatterns.psiElement(GherkinStep::class.java),
@@ -18,30 +27,24 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                 override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> {
                     val step = element as GherkinStep
                     val text = step.text
-                    val matcher = Pattern.compile("(\\S+\\.\\S{2,})").matcher(text)
+                    val matcher = STEP_FILE_PATTERN.matcher(text)
+
+                    val featureFile = step.containingFile.virtualFile ?: return emptyArray()
+                    val virtualDirectory = featureFile.parent ?: return emptyArray()
+
+                    val project = step.project
                     val references = mutableListOf<PsiReference>()
-
-                    // There is no virtualFile when autocompletion
-                    val featureFile = step.containingFile.virtualFile ?: return references.toTypedArray()
-
-                    if(featureFile.parent === null){
-                        return references.toTypedArray()
-                    }
-                    val virtualDirectory: VirtualFile = featureFile.parent
 
                     while (matcher.find()) {
                         val start = matcher.start(1)
                         val end = matcher.end(1)
                         val textRange = TextRange(start, end)
-
                         val fileName = text.substring(textRange.startOffset, textRange.endOffset)
 
-                        val files = findFiles(virtualDirectory, fileName)
-
+                        val files = findFiles(virtualDirectory, fileName, project)
                         files.forEach {
                             references.add(GherkinStepFileReference(element, textRange, it))
                         }
-
                     }
 
                     return references.toTypedArray()
@@ -50,48 +53,27 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
         )
     }
 
-    private fun findFiles(virtualDirectory: VirtualFile, fileName: String): MutableList<VirtualFile> {
-        val files = mutableListOf<VirtualFile>()
+    private fun findFiles(virtualDirectory: VirtualFile, fileName: String, project: Project): List<VirtualFile> {
+        ProgressManager.checkCanceled()
 
-        // Split the fileName into components
-        val parts = fileName.split("/")
-        val targetFileName = parts.last()
-        val targetPath = parts.dropLast(1)
-
-        // Function to recursively search for files
-        fun searchDirectory(directory: VirtualFile, path: List<String>): List<VirtualFile> {
-            val results = mutableListOf<VirtualFile>()
-
-            // Base case: if the path is empty, we are at the target directory level
-            if (path.isEmpty()) {
-                directory.children.forEach { file ->
-                    if (!file.isDirectory && file.name == targetFileName) {
-                        results.add(file)
-                    }
-                }
-                return results
-            }
-
-            // Otherwise, continue searching in subdirectories
-            val nextDirectoryName = path.first()
-            directory.children.forEach { file ->
-                if (file.isDirectory && file.name == nextDirectoryName) {
-                    results.addAll(searchDirectory(file, path.drop(1)))
-                }
-            }
-            return results
+        val directFile = VfsUtil.findRelativeFile(virtualDirectory, *fileName.split('/').toTypedArray())
+        if (directFile != null && !directFile.isDirectory) {
+            return listOf(directFile)
         }
 
-        // Search the current directory
-        files.addAll(searchDirectory(virtualDirectory, targetPath))
+        ProgressManager.checkCanceled()
+        val fileNameOnly = fileName.substringAfterLast('/')
+        val scope = GlobalSearchScope.projectScope(project)
+        val allByName = FilenameIndex.getVirtualFilesByName(fileNameOnly, scope)
+            .filter { !it.isDirectory }
 
-        // Search first-level subdirectories
-        virtualDirectory.children.forEach { file ->
-            if (file.isDirectory) {
-                files.addAll(searchDirectory(file, targetPath))
-            }
+        val fileIndex = ProjectFileIndex.getInstance(project)
+        val contentFiles = allByName.filter { fileIndex.isInContent(it) }
+
+        if (contentFiles.isNotEmpty()) {
+            return contentFiles
         }
 
-        return files
+        return allByName
     }
 }

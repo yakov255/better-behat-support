@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+## [1.6.0]
+- Plugin auto updates from GitHub repository
+
 ## [1.5.1]
 - Fixed: IDE freeze on file rename when GherkinElementFactory.createScenarioFromText fails
 - Fixed: Handle null language and empty scenarios in rename refactoring

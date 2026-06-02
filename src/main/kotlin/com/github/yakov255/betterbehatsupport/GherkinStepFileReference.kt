@@ -42,17 +42,19 @@ class GherkinStepFileReference(
         val scenario = myElement.parent as GherkinScenario
         val feature = scenario.parent as GherkinFeature
         val file = feature.parent as GherkinFile
-        val language = file.localeLanguage
+        val language = file.localeLanguage ?: "en"
         val project = scenario.project
 
         val wrapperText = "Scenario:\n$newStepText"
-        val minimalScenario = GherkinElementFactory.createScenarioFromText(
-            project, language, wrapperText
-        ) as GherkinScenario
-        val updatedElement = minimalScenario.steps.first()
-
-        myElement.replace(updatedElement)
-
-        return updatedElement
+        try {
+            val minimalScenario = GherkinElementFactory.createScenarioFromText(
+                project, language, wrapperText
+            ) as? GherkinScenario ?: return myElement
+            val updatedElement = minimalScenario.steps.firstOrNull() ?: return myElement
+            myElement.replace(updatedElement)
+            return updatedElement
+        } catch (e: Exception) {
+            return myElement
+        }
     }
 }

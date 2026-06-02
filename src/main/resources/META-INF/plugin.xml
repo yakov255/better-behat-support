@@ -8,6 +8,10 @@
     <depends>gherkin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.github.yakov255.betterbehatsupport.GitHubUpdateCheckSettings"/>
+        <applicationService serviceImplementation="com.github.yakov255.betterbehatsupport.GitHubUpdateCheckService"/>
+        <notificationGroup id="Better Behat Update Notifications" displayType="BALLOON"/>
+        <postStartupActivity implementation="com.github.yakov255.betterbehatsupport.StartupActivity"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
     </extensions>
 </idea-plugin>

@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+## [1.6.]
+- Nop release for testing auto update
+
 ## [1.6.0]
 - Plugin auto updates from GitHub repository
 

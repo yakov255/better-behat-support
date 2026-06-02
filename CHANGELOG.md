@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+## [1.5.1]
+- Fixed: IDE freeze on file rename when GherkinElementFactory.createScenarioFromText fails
+- Fixed: Handle null language and empty scenarios in rename refactoring
+
 ## [1.5.0]
 - Performance: Pattern.compile extracted to companion object
 - Performance: VFS recursive traversal replaced with direct path + FilenameIndex

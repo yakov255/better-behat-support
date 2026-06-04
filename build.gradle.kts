@@ -150,7 +150,7 @@ tasks {
 
                     appendLine("""    <plugin id="${pluginId.get()}" url="$repo/releases/download/$ver/better-behat-support-$ver.zip" version="$ver">""")
                     appendLine("        <name>${pluginName.get()}</name>")
-                    appendLine("""        <idea-version since-build="${sinceBuild.get()}" until-build="${sinceBuild.get()}.*"/>""")
+                    appendLine("""        <idea-version since-build="${sinceBuild.get()}"/>""")
                     if (htmlNotes.isNotBlank()) {
                         appendLine("        <change-notes><![CDATA[$htmlNotes]]></change-notes>")
                     }

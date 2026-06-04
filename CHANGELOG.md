@@ -1,6 +1,6 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
-# Behat external file handling enhancements Changelog
+# Behat Go To File
 
 ## [1.7.0]
 - Strip surrounding quotes from filenames in Gherkin steps

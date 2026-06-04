@@ -2,7 +2,9 @@
 
 # Behat external file handling enhancements Changelog
 
-## Unreleased
+## [1.7.0]
+- Strip surrounding quotes from filenames in Gherkin steps
+- Demo project added
 
 ## [1.6.4]
 - Nop release for testing auto update

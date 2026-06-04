@@ -1,0 +1,13 @@
+{
+  "name": "better-behat-support/demo",
+  "description": "Demo project for better-behat-support plugin",
+  "require": {
+    "php": ">=8.1",
+    "behat/behat": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "": "features/bootstrap/"
+    }
+  }
+}

@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+## [1.6.4]
+- Nop release for testing auto update
+
 ## [1.6.3]
 - Nop release for testing auto update
 

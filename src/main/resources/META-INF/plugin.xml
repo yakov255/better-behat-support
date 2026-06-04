@@ -8,6 +8,7 @@
     <depends>gherkin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <updateSettingsProvider implementation="com.github.yakov255.betterbehatsupport.CustomRepoProvider"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
     </extensions>
 </idea-plugin>

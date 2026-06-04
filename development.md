@@ -15,8 +15,17 @@
 ./gradlew check                          # Run tests + code coverage
 ./gradlew verifyPlugin                   # Verify plugin structure + IDE compatibility
 ```
-
 The built ZIP is at `build/distributions/`.
+
+## Git hooks
+
+Version-controlled hooks live in `.githooks/`. Enable them:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+- **pre-commit**: auto-regenerates `docs/updatePlugins.xml` when `CHANGELOG.md` changes.
 
 ## Update mechanism
 

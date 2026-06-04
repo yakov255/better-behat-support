@@ -32,8 +32,10 @@ git config core.hooksPath .githooks
 The plugin uses a **custom IntelliJ plugin repository** hosted on GitHub Pages:
 
 1. `docs/updatePlugins.xml` — the repository manifest, generated from `CHANGELOG.md`
-2. `src/main/resources/META-INF/plugin.xml` — contains `updateUrl` pointing to the XML
-3. IDE checks this URL for updates through the standard `Settings → Plugins` UI
+2. `src/main/kotlin/…/CustomRepoProvider.kt` — implements `UpdateSettingsProvider`, auto-registers the repository URL at IDE startup
+3. `src/main/resources/META-INF/plugin.xml` — registers `<updateSettingsProvider>` extension so IDE automatically checks the custom repo for updates
+
+> **Note:** The `url` attribute on `<idea-plugin>` is the plugin's homepage, **not** the update URL. The update URL is registered programmatically via `UpdateSettingsProvider`.
 
 ### Regenerate the manifest
 
@@ -90,7 +92,7 @@ The release is fully automated via GitHub Actions.
    - Commits and pushes `docs/updatePlugins.xml` to `main`
    - GitHub Pages immediately serves the updated manifest
 
-9. Users get the update notification in their IDE within 24 hours (or immediately on "Check for Updates").
+9. Users get the update notification in their IDE within 24 hours (or immediately on "Check for Updates"). The custom repository URL is auto-registered by the plugin via `UpdateSettingsProvider` — no manual configuration needed.
 
 ### CI pipelines
 
@@ -99,20 +101,3 @@ The release is fully automated via GitHub Actions.
 | **Build** | `.github/workflows/build.yml` | Push to `main`, pull requests |
 | **Release** | `.github/workflows/release.yml` | GitHub Release published |
 | **UI Tests** | `.github/workflows/run-ui-tests.yml` | Manual (`workflow_dispatch`) |
-
-## Project structure
-
-```
-.
-├── .github/workflows/        # CI/CD
-├── build.gradle.kts          # Gradle build (IntelliJ Platform Plugin)
-├── CHANGELOG.md              # All versions and change notes
-├── docs/
-│   └── updatePlugins.xml     # Custom plugin repository manifest (auto-generated)
-├── gradle.properties         # Plugin version, SDK version, etc.
-├── src/
-│   └── main/
-│       ├── kotlin/           # Plugin source code
-│       └── resources/META-INF/plugin.xml
-└── development.md            # This file
-```

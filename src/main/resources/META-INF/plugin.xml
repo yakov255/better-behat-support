@@ -1,7 +1,7 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin url="https://yakov255.github.io/better-behat-support/updatePlugins.xml">
     <id>com.github.yakov255.betterbehatsupport</id>
-    <name>better-behat-support</name>
+    <name>Behat Go To File</name>
     <vendor>yakov255</vendor>
 
     <depends>com.intellij.modules.platform</depends>

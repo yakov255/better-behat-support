@@ -35,6 +35,7 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
                         val end = matcher.end(1)
                         val textRange = TextRange(start, end)
                         val fileName = text.substring(textRange.startOffset, textRange.endOffset)
+                            .trim('"', '\'')
 
                         val files = findFiles(virtualDirectory, fileName)
                         files.forEach {

@@ -1,5 +1,5 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-<idea-plugin>
+<idea-plugin url="https://yakov255.github.io/better-behat-support/updatePlugins.xml">
     <id>com.github.yakov255.betterbehatsupport</id>
     <name>better-behat-support</name>
     <vendor>yakov255</vendor>
@@ -8,10 +8,6 @@
     <depends>gherkin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.yakov255.betterbehatsupport.GitHubUpdateCheckSettings"/>
-        <applicationService serviceImplementation="com.github.yakov255.betterbehatsupport.GitHubUpdateCheckService"/>
-        <notificationGroup id="Better Behat Update Notifications" displayType="BALLOON"/>
-        <postStartupActivity implementation="com.github.yakov255.betterbehatsupport.StartupActivity"/>
         <psi.referenceContributor language="Gherkin" implementation="com.github.yakov255.betterbehatsupport.GherkinStepReferenceContributor"/>
     </extensions>
 </idea-plugin>

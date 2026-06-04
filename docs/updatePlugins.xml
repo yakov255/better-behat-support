@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.6.1/better-behat-support-1.6.1.zip" version="1.6.1">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Nop release for testing auto update</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.6.0/better-behat-support-1.6.0.zip" version="1.6.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Plugin auto updates from GitHub repository</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.5.1/better-behat-support-1.5.1.zip" version="1.5.1">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Fixed: IDE freeze on file rename when GherkinElementFactory.createScenarioFromText fails</li><li>Fixed: Handle null language and empty scenarios in rename refactoring</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.5.0/better-behat-support-1.5.0.zip" version="1.5.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Performance: Pattern.compile extracted to companion object</li><li>Performance: VFS recursive traversal replaced with direct path + FilenameIndex</li><li>Performance: Added ProgressManager.checkCanceled to prevent EDT freezes</li><li>Performance: Added ProjectFileIndex.isInContent filter to exclude vendor files</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.4.0/better-behat-support-1.4.0.zip" version="1.4.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Support all file extensions (not limited to json, xml, txt)</li><li>Minimum extension length of 2 characters to avoid false positives</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.3.0/better-behat-support-1.3.0.zip" version="1.3.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Added support for 2025.2 and up</li><li>Removed Rename File quick action</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.2.0/better-behat-support-1.2.0.zip" version="1.2.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<ul><li>Support all files in directory alongside .feature file</li><li>Support all files in all directories alongside .feature file</li><li>Support relative paths (responses/response.json)</li><li>Support multiple files in one step</li><li>Supports txt, json and xml files</li><li>Removed Inspection</li><li>Removed Go To File action</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.0.0/better-behat-support-1.0.0.zip" version="1.0.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243" until-build="243.*"/>
+        <change-notes><![CDATA[<h3>Added</h3>
+<ul><li>Support line &quot;ответ содержит данные значения, аналогичные файлу (.+)&quot;</li><li>Support folder &quot;expected_responses&quot;</li><li>Change filename in gherkin step when file renamed</li><li>Check that file exists or show quick fix &quot;create file $filename&quot;</li><li>Go to file context action</li><li>Find usages on file</li></ul>]]></change-notes>
+    </plugin>
+</plugins>

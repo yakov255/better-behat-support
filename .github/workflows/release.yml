@@ -52,3 +52,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload ${{ github.event.release.tag_name }} ./build/distributions/*.zip --clobber
 
+      # Generate updatePlugins.xml for the custom plugin repository
+      - name: Generate updatePlugins.xml
+        run: |
+          ./gradlew generateUpdatePluginsXml
+          cp docs/updatePlugins.xml /tmp/updatePlugins.xml
+
+      # Commit and push updatePlugins.xml to main for GitHub Pages
+      - name: Commit to main
+        run: |
+          git fetch origin main
+          git checkout main
+          cp /tmp/updatePlugins.xml docs/updatePlugins.xml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/updatePlugins.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate updatePlugins.xml for ${{ github.event.release.tag_name }}"
+            git push
+          fi
+

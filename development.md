@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - JDK 21
-- IntelliJ IDEA (or PhpStorm) with the "Plugin DevKit" plugin
+- IntelliJ IDEA (or PhpStorm)
 
 ## Build & run
 

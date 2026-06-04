@@ -2,6 +2,8 @@
 
 # Behat Go To File
 
+## Unreleased
+
 ## [1.7.0]
 - Strip surrounding quotes from filenames in Gherkin steps
 - Demo project added

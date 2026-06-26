@@ -17,6 +17,7 @@ class GherkinStepFileReference(
 ) : PsiReferenceBase<GherkinStep>(step, range), PsiPolyVariantReference {
 
     override fun resolve(): PsiElement? {
+        if (!virtualFile.isValid) return null // файл мог быть удалён или перемещён после индексации
         return PsiManager.getInstance(myElement.project).findFile(virtualFile)
     }
 

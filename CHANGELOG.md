@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+## [1.7.1]
+- Fixed: InvalidVirtualFileAccessException when file was deleted after indexing
+
 ## [1.7.0]
 - Strip surrounding quotes from filenames in Gherkin steps
 - Demo project added

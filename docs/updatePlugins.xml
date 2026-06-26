@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.7.1/better-behat-support-1.7.1.zip" version="1.7.1">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243"/>
+        <change-notes><![CDATA[<ul><li>Fixed: InvalidVirtualFileAccessException when file was deleted after indexing</li></ul>]]></change-notes>
+    </plugin>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.7.0/better-behat-support-1.7.0.zip" version="1.7.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243"/>
+        <change-notes><![CDATA[<ul><li>Strip surrounding quotes from filenames in Gherkin steps</li><li>Demo project added</li></ul>]]></change-notes>
+    </plugin>
     <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.6.4/better-behat-support-1.6.4.zip" version="1.6.4">
         <name>Behat Go To File</name>
-        <idea-version since-build="243" until-build="243.*"/>
+        <idea-version since-build="243"/>
         <change-notes><![CDATA[<ul><li>Nop release for testing auto update</li></ul>]]></change-notes>
     </plugin>
     <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.6.3/better-behat-support-1.6.3.zip" version="1.6.3">

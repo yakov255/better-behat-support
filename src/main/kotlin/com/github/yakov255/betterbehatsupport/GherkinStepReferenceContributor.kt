@@ -58,23 +58,18 @@ class GherkinStepReferenceContributor : PsiReferenceContributor() {
         }
 
         ProgressManager.checkCanceled()
-        val fileNameOnly = fileName.substringAfterLast('/')
+
         val results = mutableListOf<VirtualFile>()
+        val pathSegments = fileName.split('/').toTypedArray()
 
-        fun collectFrom(directory: VirtualFile) {
-            if (!directory.isValid) return
-            directory.children.forEach { child ->
-                if (!child.isDirectory && child.name == fileNameOnly) {
-                    results.add(child)
-                }
-            }
-        }
-
-        collectFrom(virtualDirectory)
-
+        // Try resolving the full path relative to each immediate subdirectory
         virtualDirectory.children.forEach { child ->
             if (child.isDirectory) {
-                collectFrom(child)
+                ProgressManager.checkCanceled()
+                val file = VfsUtil.findRelativeFile(child, *pathSegments)
+                if (file != null && !file.isDirectory) {
+                    results.add(file)
+                }
             }
         }
 

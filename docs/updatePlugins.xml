@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
+    <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.8.0/better-behat-support-1.8.0.zip" version="1.8.0">
+        <name>Behat Go To File</name>
+        <idea-version since-build="243"/>
+        <change-notes><![CDATA[<ul><li>Fixed: File resolution fallback for files in nested subdirectories</li></ul>]]></change-notes>
+    </plugin>
     <plugin id="com.github.yakov255.betterbehatsupport" url="https://github.com/yakov255/better-behat-support/releases/download/1.7.1/better-behat-support-1.7.1.zip" version="1.7.1">
         <name>Behat Go To File</name>
         <idea-version since-build="243"/>

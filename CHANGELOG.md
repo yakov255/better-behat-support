@@ -2,7 +2,8 @@
 
 # Behat Go To File
 
-## Unreleased
+## [1.8.0]
+- Fixed: File resolution fallback for files in nested subdirectories
 
 ## [1.7.1]
 - Fixed: InvalidVirtualFileAccessException when file was deleted after indexing

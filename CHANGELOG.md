@@ -2,6 +2,8 @@
 
 # Behat Go To File
 
+## Unreleased
+
 ## [1.8.0]
 - Fixed: File resolution fallback for files in nested subdirectories
 

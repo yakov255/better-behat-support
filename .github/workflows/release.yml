@@ -54,6 +54,8 @@ jobs:
 
       # Generate updatePlugins.xml for the custom plugin repository
       - name: Generate updatePlugins.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./gradlew generateUpdatePluginsXml
           cp docs/updatePlugins.xml /tmp/updatePlugins.xml

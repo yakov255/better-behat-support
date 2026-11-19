@@ -1,6 +1,12 @@
+import groovy.json.JsonSlurper
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 
 plugins {
     id("java") // Java support
@@ -129,26 +135,80 @@ tasks {
 
         val docsDir = layout.projectDirectory.dir("docs")
         val changelogFile = layout.projectDirectory.file("CHANGELOG.md")
+        val repoSlug = providers.gradleProperty("pluginRepositoryUrl")
+            .map { it.removePrefix("https://github.com/").trimEnd('/') }
+            .get()
 
         inputs.file(changelogFile)
         outputs.dir(docsDir)
+
+        outputs.upToDateWhen { false }
 
         doLast {
             val text = changelogFile.asFile.readText()
             val sections = text.split(Regex("(?m)^## "))
 
+            // Only versions with a published GitHub release can be advertised:
+            // every other version has no ZIP behind its download URL.
+            fun fetchPublishedReleaseTags(): List<Pair<String, Set<String>>> {
+                val uri = URI.create("https://api.github.com/repos/$repoSlug/releases?per_page=100")
+                val request = HttpRequest.newBuilder(uri)
+                    .header("Accept", "application/vnd.github+json")
+                    .header("X-GitHub-Api-Version", "2022-11-28")
+                    .apply {
+                        val token = System.getenv("GITHUB_TOKEN")?.takeIf { it.isNotBlank() }
+                        if (token != null) header("Authorization", "Bearer $token")
+                    }
+                    .GET()
+                    .build()
+                val response = try {
+                    HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(15))
+                        .build()
+                        .send(request, HttpResponse.BodyHandlers.ofString())
+                } catch (e: Exception) {
+                    throw GradleException("Cannot read GitHub releases from $uri: ${e.message}", e)
+                }
+                if (response.statusCode() != 200) {
+                    throw GradleException("Cannot read GitHub releases from $uri: HTTP ${response.statusCode()}")
+                }
+                @Suppress("UNCHECKED_CAST")
+                val releases = JsonSlurper().parseText(response.body()) as List<Map<String, Any?>>
+                return releases
+                    .filter { it["draft"] == false }
+                    .map { release ->
+                        @Suppress("UNCHECKED_CAST")
+                        val assets = (release["assets"] as List<Map<String, Any?>>)
+                            .map { it["name"].toString() }
+                            .toSet()
+                        (release["tag_name"] as String) to assets
+                    }
+            }
+
+            val publishedReleases = fetchPublishedReleaseTags()
+
+            val skippedWithoutRelease = mutableListOf<String>()
+            val skippedWithoutAsset = mutableListOf<String>()
             val xml = buildString {
                 appendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
                 appendLine("<plugins>")
                 for (section in sections) {
-                    val headerMatch = Regex("""\[(\d[\w.-]*)\]""").find(section)
-                    if (headerMatch == null) continue
+                    val headerMatch = Regex("""\[(\d[\w.-]*)\]""").find(section) ?: continue
                     val ver = headerMatch.groupValues[1].trim()
+                    val tag = publishedReleases.firstOrNull { it.first.removePrefix("v") == ver }?.first
+                    if (tag == null) {
+                        skippedWithoutRelease += ver
+                        continue
+                    }
+                    if (publishedReleases.first { it.first == tag }.second.none { it == "better-behat-support-$ver.zip" }) {
+                        skippedWithoutAsset += ver
+                        continue
+                    }
                     val bodyLines = section.lines().drop(1).dropWhile { it.isBlank() }
                     val rawNotes = bodyLines.joinToString("\n").trim()
                     val htmlNotes = if (rawNotes.isNotBlank()) markdownToHTML(rawNotes) else ""
 
-                    appendLine("""    <plugin id="${pluginId.get()}" url="$repo/releases/download/$ver/better-behat-support-$ver.zip" version="$ver">""")
+                    appendLine("""    <plugin id="${pluginId.get()}" url="$repo/releases/download/$tag/better-behat-support-$ver.zip" version="$ver">""")
                     appendLine("        <name>${pluginName.get()}</name>")
                     appendLine("""        <idea-version since-build="${sinceBuild.get()}"/>""")
                     if (htmlNotes.isNotBlank()) {
@@ -161,7 +221,13 @@ tasks {
 
             docsDir.asFile.mkdirs()
             docsDir.file("updatePlugins.xml").asFile.writeText(xml)
-            logger.lifecycle("Generated docs/updatePlugins.xml with ${sections.count { Regex("""\[(\d[\w.-]*)\]""").containsMatchIn(it) }} version(s)")
+            logger.lifecycle("Generated docs/updatePlugins.xml with ${publishedReleases.size} published release(s)")
+            if (skippedWithoutRelease.isNotEmpty()) {
+                logger.lifecycle("Skipped versions without a published release: ${skippedWithoutRelease.joinToString(", ")}")
+            }
+            if (skippedWithoutAsset.isNotEmpty()) {
+                logger.lifecycle("Skipped versions without a release asset: ${skippedWithoutAsset.joinToString(", ")}")
+            }
         }
     }
 }
